@@ -6,6 +6,8 @@ from openai.types.beta import Thread, Assistant, VectorStore
 from openai.types.beta.threads import TextContentBlock, TextDelta, Message, Text
 from openai.types.beta.threads.runs import ToolCall
 
+client: OpenAI
+
 class EventHandler(AssistantEventHandler):
 
     def __init__(self, auto_print: bool = False):
@@ -35,33 +37,54 @@ class EventHandler(AssistantEventHandler):
             if isinstance(content, TextContentBlock):
                 self.response_text += content.text.value
 
-def create_vector_store(client: OpenAI, file_path: Path) -> VectorStore:
+def init(api_key: str, verify: bool = True):
+    """
+    Initializes the OpenAI client with the provided API key.
+
+    Parameters:
+        api_key (str): The API key to initialize the OpenAI API client with.
+        verify (bool): Verify the API key by making a test request to the API. Default is True.
+
+    Raises:
+        ValueError: If the API key is not provided or is not a string.
+        openai.AuthenticationError: If the API key is invalid or the verification request fails.
+    """
+    if not api_key or not isinstance(api_key, str):
+        raise ValueError("API key must be a non-empty string.")
+    
+    global client
+    client = OpenAI(api_key=api_key)
+    
+    if verify:
+        client.models.list()
+
+def create_vector_store(file_path: Path) -> VectorStore:
+    # TODO(justin): allow a list of paths to be passed here, creating a store with multiple files
     file_response = client.files.create(file=open(file_path, 'rb'), purpose='assistants')
     file_id = file_response.id
     vector_store = client.beta.vector_stores.create(
-        name=f"transcript_{file_path.stem}",
-        file_ids=[file_id]
+        name = file_path.stem,
+        file_ids = [file_id]
     )
     return vector_store
 
-def create_assistant(client: OpenAI, vector_store_ids: List[str], model: str) -> Assistant:
+def create_assistant(model: str) -> Assistant:
     assistant = client.beta.assistants.create(
-        name="Transcript Analysis Assistant",
-        instructions="You are an assistant that summarizes video transcripts and answers questions about them.",
-        model=model,
-        tools=[{"type": "file_search"}],
-        tool_resources={"file_search": {"vector_store_ids": vector_store_ids}}
+        name = "Transcript Analysis Assistant",
+        instructions = "You are an assistant that summarizes video transcripts and answers questions about them.",
+        model = model,
+        tools = [{"type": "file_search"}],
     )
     return assistant
 
-def create_thread(client: OpenAI, vector_store_ids: List[str], question: str) -> Thread:
+def create_thread(vector_store_ids: List[str], question: str) -> Thread:
     thread = client.beta.threads.create(
-        messages=[{"role": "user", "content": question}],
-        tool_resources={"file_search": {"vector_store_ids": vector_store_ids}}
+        messages = [{"role": "user", "content": question}],
+        tool_resources = {"file_search": {"vector_store_ids": vector_store_ids}}
     )
     return thread
 
-def get_thread_response(client: OpenAI, thread_id: str, assistant_id: str, prompt: str, auto_print: bool = False) -> str:
+def get_thread_response(thread_id: str, assistant_id: str, prompt: str, auto_print: bool = False) -> str:
     client.beta.threads.messages.create(thread_id = thread_id, content = prompt, role = "user")
 
     event_handler = EventHandler(auto_print = auto_print)
