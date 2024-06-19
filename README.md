@@ -1,7 +1,7 @@
 # summawise
 Summarize information from vectorized file(s) via OpenAI, and use an interactive prompt to dig deeper.
 
-(Currently only supports YouTube video transcripts - see [disclaimer](https://github.com/ooojustin/summawise#Disclaimer) for more info)
+(Currently only supports YouTube video transcripts - see [disclaimer](https://github.com/ooojustin/summawise?tab=readme-ov-file#disclaimer) for more info)
 
 ## Notes
 
