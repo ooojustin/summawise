@@ -16,7 +16,8 @@ class TranscriptEntry:
 
 class Transcript:
 
-    def __init__(self, entries: List[TranscriptEntry]):
+    def __init__(self, video_id: str, entries: List[TranscriptEntry]):
+        self.video_id = video_id
         self.entries = entries
 
     def __str__(self):
@@ -25,7 +26,7 @@ class Transcript:
 def get_transcript(video_id: str) -> Transcript:
     transcript_data = YouTubeTranscriptApi.get_transcript(video_id)
     entries = [TranscriptEntry(**entry) for entry in transcript_data]
-    return Transcript(entries)
+    return Transcript(video_id, entries)
 
 def parse_video_id(url: str) -> str:
     regex = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"

@@ -1,4 +1,4 @@
-import json, tempfile, utils, ai
+import json, utils, ai
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from openai import AuthenticationError, BadRequestError
@@ -12,8 +12,7 @@ class Settings:
     model: str = field(default=DEFAULT_MODEL)
 
 def get_settings() -> Settings:
-    temp_dir = Path(tempfile.gettempdir())
-    settings_file = temp_dir / "summawise.json"
+    settings_file = utils.get_summawise_dir() / "settings.json"
     
     if settings_file.exists():
         data_str = utils.read_file(settings_file)

@@ -58,14 +58,13 @@ def init(api_key: str, verify: bool = True):
     if verify:
         client.models.list()
 
-def create_vector_store(file_path: Path) -> VectorStore:
-    # TODO(justin): allow a list of paths to be passed here, creating a store with multiple files
-    file_response = client.files.create(file=open(file_path, 'rb'), purpose='assistants')
-    file_id = file_response.id
-    vector_store = client.beta.vector_stores.create(
-        name = file_path.stem,
-        file_ids = [file_id]
-    )
+def create_vector_store(name: str, files: List[Path]) -> VectorStore:
+    file_ids: List[str] = []
+    for file_path in files:
+        with open(file_path, 'rb') as file:
+            file_response = client.files.create(file = file, purpose = "assistants")
+            file_ids.append(file_response.id)
+    vector_store = client.beta.vector_stores.create(name = name, file_ids = file_ids)
     return vector_store
 
 def create_assistant(model: str) -> Assistant:
