@@ -49,12 +49,12 @@ class Transcript:
             "vector_store_id": self.vector_store_id
         }, indent = 4 if pretty else None)
 
-    def save_to_file(self, file_path: Path, mode: DataMode = DataMode.JSON):
+    def save_to_file(self, file_path: Path, mode: DataMode = DataMode.JSON, compress: bool = False):
         if mode == DataMode.JSON:
             json_str = self.to_json()
-            FileUtils.write_str(file_path, json_str)
+            FileUtils.write_str(file_path, json_str, compress)
         elif mode == DataMode.BIN:
-            FileUtils.save_object(file_path, self)
+            FileUtils.save_object(file_path, self, compress)
 
     @staticmethod
     def from_file(file_path: Path, mode: DataMode = DataMode.JSON) -> "Transcript":
