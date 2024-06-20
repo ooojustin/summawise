@@ -1,6 +1,6 @@
 import json, re, utils, ai
 from utils import FileUtils
-from settings import DataMode
+from settings import Settings, DataMode
 from datetime import timedelta
 from typing import List
 from pathlib import Path
@@ -90,9 +90,66 @@ def load_transcript(file_path: Path, mode: DataMode = DataMode.JSON) -> Transcri
     return Transcript.from_file(file_path, mode)
 
 def parse_video_id(url: str) -> str:
-    regex = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
-    match = re.search(regex, url)
+    pattern = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
+    match = re.search(pattern, url)
     if match:
         return match.group(1)
     else:
         raise ValueError("Invalid YouTube video URL")
+
+def is_url(url: str) -> bool:
+    pattern = r"(youtu\.be|(?:www\.)?youtube\.com)\/"
+    return re.search(pattern, url) is not None
+
+def process(url: str) -> str:
+    """
+    Process a youtube URL as input.
+    This function will extract a transcript, handle caching/storage, and return an OpenAI vector store ID.
+    """
+    # use settings class (singleton)
+    settings = Settings() # type: ignore
+
+    # get youtube video id
+    video_id = parse_video_id(url)
+    print(f"Extracted Video ID: {video_id}")
+    
+    # file extension to cache certain ojects/data (json or bin)
+    ext = settings.data_mode.ext()
+
+    name = f"transcript_{video_id}"
+    transcript_path = utils.get_summawise_dir() / "youtube" / f"{name}.{ext}"
+    exists = transcript_path.exists()
+
+    if not exists and transcript_path.suffix != ".bin":
+        # check for gzipped variation of generated file path
+        gz_path = transcript_path.with_suffix(transcript_path.suffix + ".gz")
+        if gz_path.exists():
+            transcript_path = gz_path
+            exists = True
+
+    if not exists:
+        # fetch transcript data from youtube
+        try:
+            transcript = get_transcript(video_id)
+            print("Transcript retrieved and converted to text.")
+        except Exception as e:
+            raise Exception(f"Error retrieving transcript ({type(e).__name__}): {e}")
+        
+        # create vector store on openai, cache data
+        try:
+            vector_store_id = transcript.vectorize().id
+            transcript.save_to_file(
+                file_path = transcript_path,
+                mode = settings.data_mode,
+                compress = settings.compression
+            )
+            print(f"Vector store created with ID: {vector_store_id}")
+        except Exception as ex:
+            raise Exception(f"Error creating vector store [{type(ex)}]: {ex}")
+    else:
+        # restore transcript object from file and use cached vector store id
+        transcript = load_transcript(transcript_path, settings.data_mode)
+        vector_store_id = transcript.vector_store_id
+        print(f"Restored vector store ID from cache: {transcript.vector_store_id}")
+
+    return vector_store_id

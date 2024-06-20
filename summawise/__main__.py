@@ -1,62 +1,40 @@
-import ai, youtube, utils
+import ai, youtube, utils, validators
 from settings import init_settings
 
+class NotSupportedError(Exception):
+    def __init__(self):
+        super().__init__("Failed to vectorize data. Your input type is not yet supported.")
+
+def process_input(input_str: str) -> str:
+    """Takes user input, attempts to return OpenAI VectorStore ID after processing data."""
+    if validators.url(input_str):
+        # it's a URL
+        url = input_str
+
+        # youtube url handling
+        if youtube.is_url(url):
+            return youtube.process(url)
+
+    raise NotSupportedError()
+
+
 def main():
-    youtube_url = input("Enter a YouTube video URL: ")
     settings = init_settings()
 
     if not hasattr(ai, "client"):
         # TODO(justin): handle api key that becomes invalid *after* initial setup prompts
         ai.init(settings.api_key)
-    
-    # file extension to cache certain ojects/data (json or bin)
-    ext = settings.data_mode.ext()
 
-    # get youtube video id
+    input_str = input("Enter a URL or local file path: ")
+
     try:
-        video_id = youtube.parse_video_id(youtube_url)
-        print(f"Extracted Video ID: {video_id}")
-    except ValueError as e:
-        print(e)
+        vector_store_id = process_input(input_str)
+    except NotSupportedError as ex:
+        print(ex)
         return
-    
-    name = f"transcript_{video_id}"
-    transcript_path = utils.get_summawise_dir() / "youtube" / f"{name}.{ext}"
-    exists = transcript_path.exists()
-
-    if not exists and transcript_path.suffix != ".bin":
-        # check for gzipped variation of generated file path
-        gz_path = transcript_path.with_suffix(transcript_path.suffix + ".gz")
-        if gz_path.exists():
-            transcript_path = gz_path
-            exists = True
-
-    if not exists:
-        # fetch transcript data from youtube
-        try:
-            transcript = youtube.get_transcript(video_id)
-            print("Transcript retrieved and converted to text.")
-        except Exception as e:
-            print(f"Error retrieving transcript ({type(e).__name__}): {e}")
-            return
-        
-        # create vector store on openai, cache data
-        try:
-            vector_store_id = transcript.vectorize().id
-            transcript.save_to_file(
-                file_path = transcript_path,
-                mode = settings.data_mode,
-                compress = settings.compression
-            )
-            print(f"Vector store created with ID: {vector_store_id}")
-        except Exception as e:
-            print(f"Error creating vector store: {e}")
-            return
-    else:
-        # restore transcript object from file and use cached vector store id
-        transcript = youtube.load_transcript(transcript_path, settings.data_mode)
-        vector_store_id = transcript.vector_store_id
-        print(f"Restored vector store ID from cache: {transcript.vector_store_id}")
+    except Exception as ex:
+        print(f"An unhandled error occurred while processing input:\n{ex}")
+        return
 
     try:
         thread = ai.create_thread([vector_store_id], "Please summarize the transcript.")
