@@ -6,7 +6,7 @@ from errors import NotSupportedError
 
 def process_url(url: str) -> str:
     if youtube.is_url(url):
-        return youtube.process(url)
+        return youtube.process_url(url)
 
     extensions = {
         "text/plain": ".txt",

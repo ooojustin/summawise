@@ -101,7 +101,7 @@ def is_url(url: str) -> bool:
     pattern = r"(youtu\.be|(?:www\.)?youtube\.com)\/"
     return re.search(pattern, url) is not None
 
-def process(url: str) -> str:
+def process_url(url: str) -> str:
     """
     Process a youtube URL as input.
     This function will extract a transcript, handle caching/storage, and return an OpenAI vector store ID.

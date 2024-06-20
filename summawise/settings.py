@@ -67,33 +67,33 @@ def init_settings() -> Settings:
     return settings
 
 def prompt_for_settings() -> Settings:
-        while True:
-            api_key = input("Enter your OpenAI API key: ")
-            try:
-                ai.init(api_key)
-                break
-            except AuthenticationError:
-                print("The API key you entered is invalid. Try again.")
+    while True:
+        api_key = input("Enter your OpenAI API key: ")
+        try:
+            ai.init(api_key)
+            break
+        except AuthenticationError:
+            print("The API key you entered is invalid. Try again.")
+            continue
+
+    while True:
+        try:
+            model = input(f"Enter the OpenAI model to use [Default: {Settings.DEFAULT_MODEL}]: ")
+            assistant = ai.create_assistant(model or Settings.DEFAULT_MODEL)
+            break
+        except BadRequestError as ex:
+            if ex.code == "model_not_found":
+                print("The model identifier you entered is invalid. Try again.")
                 continue
+            raise ex
 
-        while True:
-            try:
-                model = input(f"Enter the OpenAI model to use [Default: {Settings.DEFAULT_MODEL}]: ")
-                assistant = ai.create_assistant(model or Settings.DEFAULT_MODEL)
-                break
-            except BadRequestError as ex:
-                if ex.code == "model_not_found":
-                    print("The model identifier you entered is invalid. Try again.")
-                    continue
-                raise ex
+    # TODO(justin): maybe add ability to select data mode. possibly a cli option to re-configure settings too.
+    # it's not too important, for now it'll default to binary and can be changed manually.
 
-        # TODO(justin): maybe add ability to select data mode. possibly a cli option to re-configure settings too.
-        # it's not too important, for now it'll default to binary and can be changed manually.
-
-        return Settings(
-            api_key = api_key, 
-            model = model, 
-            assistant_id = assistant.id,
-            data_mode = Settings.DEFAULT_DATA_MODE,
-            compression = Settings.DEFAULT_COMPRESSION
-        )
+    return Settings(
+        api_key = api_key, 
+        model = model, 
+        assistant_id = assistant.id,
+        data_mode = Settings.DEFAULT_DATA_MODE,
+        compression = Settings.DEFAULT_COMPRESSION
+    )
