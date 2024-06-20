@@ -6,8 +6,12 @@ def main():
     youtube_url = input("Enter a YouTube video URL: ")
 
     if not hasattr(ai, "client"):
+        # TODO(justin): handle api key that becomes invalid *after* initial setup prompts
         ai.init(settings.api_key)
     
+    # file extension to cache certain ojects/data (json or bin)
+    ext = settings.data_mode.ext()
+
     # get youtube video id
     try:
         video_id = youtube.parse_video_id(youtube_url)
@@ -17,7 +21,7 @@ def main():
         return
     
     name = f"transcript_{video_id}"
-    transcript_path = utils.get_summawise_dir() / "youtube" / f"{name}.json"
+    transcript_path = utils.get_summawise_dir() / "youtube" / f"{name}.{ext}"
     if not transcript_path.exists():
         # fetch transcript data from youtube
         try:
@@ -30,15 +34,14 @@ def main():
         # create vector store on openai, cache data
         try:
             vector_store_id = transcript.vectorize().id
-            transcript.save_to_file(transcript_path)
+            transcript.save_to_file(transcript_path, settings.data_mode)
             print(f"Vector store created with ID: {vector_store_id}")
         except Exception as e:
             print(f"Error creating vector store: {e}")
             return
     else:
         # restore transcript object from file and use cached vector store id
-        json_str = utils.read_file(transcript_path)
-        transcript = youtube.Transcript.from_json(json_str)
+        transcript = youtube.load_transcript(transcript_path, settings.data_mode)
         vector_store_id = transcript.vector_store_id
         print(f"Restored vector store ID from cache: {transcript.vector_store_id}")
 
