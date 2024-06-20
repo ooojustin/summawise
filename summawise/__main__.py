@@ -22,7 +22,16 @@ def main():
     
     name = f"transcript_{video_id}"
     transcript_path = utils.get_summawise_dir() / "youtube" / f"{name}.{ext}"
-    if not transcript_path.exists():
+    exists = transcript_path.exists()
+
+    if not exists and transcript_path.suffix != ".bin":
+        # check for gzipped variation of generated file path
+        gz_path = transcript_path.with_suffix(transcript_path.suffix + ".gz")
+        if gz_path.exists():
+            transcript_path = gz_path
+            exists = True
+
+    if not exists:
         # fetch transcript data from youtube
         try:
             transcript = youtube.get_transcript(video_id)
@@ -34,7 +43,11 @@ def main():
         # create vector store on openai, cache data
         try:
             vector_store_id = transcript.vectorize().id
-            transcript.save_to_file(transcript_path, settings.data_mode)
+            transcript.save_to_file(
+                file_path = transcript_path,
+                mode = settings.data_mode,
+                compress = settings.compression
+            )
             print(f"Vector store created with ID: {vector_store_id}")
         except Exception as e:
             print(f"Error creating vector store: {e}")
