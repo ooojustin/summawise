@@ -20,12 +20,14 @@ class DataUnit:
         # "B", "KB", "MB", "GB", "TB"
         if len(DataUnit.units):
             return DataUnit.units
-        DataUnit.units = [
-            name for name, value in inspect.getmembers(DataUnit) \
-            if not name.startswith("__") \
-            and name not in DataUnit.__excludes__ \
+        units = [
+            (name, value) for name, value in inspect.getmembers(DataUnit) 
+            if not name.startswith("__") 
+            and name not in DataUnit.__excludes__ 
             and not callable(value)
-        ] 
+        ]
+        units = sorted(units, key=lambda x: x[1])
+        DataUnit.units = [name for name, _ in units]
         return DataUnit.units
 
     @staticmethod

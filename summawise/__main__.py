@@ -1,7 +1,9 @@
-import ai, validators, requests
+import ai, validators, requests, time
 from settings import init_settings
 from web import process_url
 from filesystem import process_file, process_dir
+from openai.types.beta import VectorStore 
+from typing import Optional
 from utils import DataUnit
 from pathlib import Path
 from errors import NotSupportedError
@@ -60,15 +62,37 @@ def main():
         return
 
     # verify vector store validity w/ openai, output some generic info
-    try:
-        vector_store = ai.client.beta.vector_stores.retrieve(vector_store_id) # model dump example: https://pastebin.com/k4fwANdi
-        name = vector_store.name
-        files = vector_store.file_counts.total
-        sz = DataUnit.bytes_to_str(vector_store.usage_bytes)
-        print(f"Successfully established vector store! [{name}, {files} file(s), {sz}]")
-    except Exception as ex:
-        print(f"Failed to validate VectorStore from provided ID (error: {type(ex)}, id: {vector_store_id}):\n{ex}")
-        return
+    processing: bool = True
+    vector_store: Optional[VectorStore] = None
+    while processing:
+        try:
+            first_run = vector_store is None
+            vector_store = ai.client.beta.vector_stores.retrieve(vector_store_id) # model dump example: https://pastebin.com/k4fwANdi
+
+            id, name = vector_store_id, vector_store.name
+            total_files = vector_store.file_counts.total
+            completed_files = vector_store.file_counts.completed
+            pending_files = vector_store.file_counts.in_progress
+
+            processing = pending_files > 0
+            size_str = DataUnit.bytes_to_str(vector_store.usage_bytes)
+            info = f"{id} ({name}), {completed_files}/{total_files} file(s), {size_str}"
+
+            if first_run: 
+                print(f"Successfully established VectorStore!", end = " ")
+                if processing:
+                    print(f"Processing data from {pending_files} file(s)...")
+                else:
+                    print(f"{completed_files}/{total_files} file(s) have already been processed.")
+
+            if processing: 
+                time.sleep(2)
+                continue
+
+            print(f"VectorStore ready for use. [{info}]")
+        except Exception as ex:
+            print(f"Failed to validate VectorStore from provided ID (error: {type(ex)}, id: {vector_store_id}):\n{ex}")
+            return
 
     # create thread for this conversation
     try:
