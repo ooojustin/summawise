@@ -1,9 +1,9 @@
 import ai, youtube, utils
-from settings import get_settings
+from settings import init_settings
 
 def main():
-    settings = get_settings()
     youtube_url = input("Enter a YouTube video URL: ")
+    settings = init_settings()
 
     if not hasattr(ai, "client"):
         # TODO(justin): handle api key that becomes invalid *after* initial setup prompts

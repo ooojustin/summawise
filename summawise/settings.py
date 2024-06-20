@@ -1,5 +1,5 @@
 import json, utils, ai
-from utils import FileUtils
+from utils import FileUtils, Singleton
 from enum import Enum
 from dataclasses import dataclass, asdict, fields
 from typing import Dict, Any, ClassVar
@@ -20,7 +20,7 @@ class DataMode(Enum):
             raise ValueError(f"Unsupported DataMode: {self}")
 
 @dataclass
-class Settings:
+class Settings(metaclass = Singleton):
     api_key: str
     assistant_id: str
     model: str
@@ -30,6 +30,10 @@ class Settings:
     DEFAULT_MODEL: ClassVar[str] = "gpt-3.5-turbo"
     DEFAULT_COMPRESSION: ClassVar[bool] = True
     DEFAULT_DATA_MODE: ClassVar[DataMode] = DataMode.BIN
+
+    # NOTE(justin): This class functions as a singleton. Example usage anywhere:
+    # settings = Settings() # type: ignore (dismiss warnings related to required arguments)
+    # print(settings.to_dict()) # contains info established in main()
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "Settings":
@@ -45,7 +49,7 @@ class Settings:
         data["data_mode"] = self.data_mode.value
         return data
 
-def get_settings() -> Settings:
+def init_settings() -> Settings:
     settings_file = utils.get_summawise_dir() / "settings.json"
     if settings_file.exists():
         s_str = FileUtils.read_str(settings_file)
