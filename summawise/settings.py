@@ -24,15 +24,18 @@ class Settings:
     api_key: str
     assistant_id: str
     model: str
+    compression: bool
     data_mode: DataMode
 
     DEFAULT_MODEL: ClassVar[str] = "gpt-3.5-turbo"
+    DEFAULT_COMPRESSION: ClassVar[bool] = True
     DEFAULT_DATA_MODE: ClassVar[DataMode] = DataMode.BIN
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "Settings":
         return Settings(
             model = data.pop("model", Settings.DEFAULT_MODEL),
+            compression = data.pop("compression", Settings.DEFAULT_COMPRESSION),
             data_mode = DataMode(data.pop("data_mode", Settings.DEFAULT_DATA_MODE.value)),
             **data
         )
@@ -87,5 +90,6 @@ def prompt_for_settings() -> Settings:
             api_key = api_key, 
             model = model, 
             assistant_id = assistant.id,
-            data_mode = Settings.DEFAULT_DATA_MODE
+            data_mode = Settings.DEFAULT_DATA_MODE,
+            compression = Settings.DEFAULT_COMPRESSION
         )
