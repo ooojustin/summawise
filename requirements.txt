@@ -1,2 +1,4 @@
-youtube-transcript-api
+requests
 openai
+validators
+youtube-transcript-api

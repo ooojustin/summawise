@@ -68,6 +68,7 @@ def create_vector_store(name: str, files: List[Path]) -> VectorStore:
     return vector_store
 
 def create_assistant(model: str) -> Assistant:
+    # TODO(justin): more generic instructions, since this program is for more than just video transcripts
     assistant = client.beta.assistants.create(
         name = "Transcript Analysis Assistant",
         instructions = "You are an assistant that summarizes video transcripts and answers questions about them.",
