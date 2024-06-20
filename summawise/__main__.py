@@ -1,76 +1,10 @@
-import ai, youtube, validators, requests, tempfile, os
+import ai, validators, requests
 from settings import init_settings
+from web import process_url
+from filesystem import process_file, process_dir
 from utils import DataUnit
 from pathlib import Path
-
-class NotSupportedError(Exception):
-    def __init__(self, append: str = ""):
-        msg = "Failed to vectorize data. Your input is not yet supported" + (": " if append else ".")
-        msg += (": " if append else ".") + append
-        super().__init__(msg)
-
-def process_dir(dir_path: Path, delete: bool = True) -> str:
-    # TODO
-    _, _ = dir_path, delete
-    raise NotSupportedError()
-
-def process_file(file_path: Path, delete: bool = False) -> str:
-    # TODO(justin): 
-    # - cache vector store id based on file hash
-    # - add archive support (.zip, .tar.gz) - extract, call process_dir
-    # - maybe add automatic extraction of text from pdf or html (undecided)
-    vector_store = ai.create_vector_store(file_path.stem, [file_path])
-    _ = delete and file_path.exists() and file_path.unlink()
-    return vector_store.id
-
-def process_url(url: str) -> str:
-    if youtube.is_url(url):
-        return youtube.process(url)
-
-    extensions = {
-        "text/plain": ".txt",
-        "application/pdf": ".pdf",
-        "text/html": ".html"
-    }
-
-    response = requests.head(url, allow_redirects = True)
-    response.raise_for_status()
-
-    result_url = response.url
-    content_type = response.headers.get("Content-Type", "")
-
-    valid_types = list(extensions.keys())
-    for ctype in valid_types:
-        if content_type.startswith(ctype):
-            content_type = ctype
-            break
-
-    if not content_type in valid_types:
-        raise NotSupportedError(f"\nUnsupported content type detected from HEAD request: {content_type}")
-    
-    # send requst to download file from url (stream the data)
-    response = requests.get(result_url, stream = True)
-    response.raise_for_status()
-    
-    # create temp file and write chunks of streamed data to disk
-    extension = extensions.get(content_type, ".txt")
-    temp_file = tempfile.NamedTemporaryFile(suffix = extension, delete = False)
-    try:
-        temp_file_path = Path(temp_file.name)
-        for chunk in response.iter_content(chunk_size = 8 * DataUnit.KB):
-            temp_file.write(chunk)
-    except Exception as ex:
-        raise RuntimeError(f"Failed to write bytes to temporary file: {ex}")
-    finally:
-        temp_file.close()
-
-    # process the temp file, automatically delete it after
-    try:
-        result = process_file(temp_file_path, delete = True)
-    finally:
-        if temp_file_path.exists():
-            temp_file_path.unlink()
-    return result
+from errors import NotSupportedError
 
 def process_input(input_str: str) -> str:
     """Takes user input, attempts to return OpenAI VectorStore ID after processing data."""
@@ -136,7 +70,9 @@ def main():
         print(f"Failed to validate VectorStore from provided ID (error: {type(ex)}, id: {vector_store_id}):\n{ex}")
         return
 
+    # create thread for this conversation
     try:
+        # TODO(justin): change message used to initialize thread based on type of input data/source
         thread = ai.create_thread([vector_store_id], "Please summarize the transcript.")
         print(f"Thread created with ID: {thread.id}")
         print("Generating summary...")
