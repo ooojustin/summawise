@@ -66,3 +66,23 @@ class FileUtils:
 def get_summawise_dir() -> Path:
     temp_dir = Path(tempfile.gettempdir())
     return temp_dir / "summawise"
+
+def bytes_to_str(sz_bytes: int) -> str:
+    assert sz_bytes >= 0, "num_bytes must be non-negative"
+    units = ["B", "KB", "MB", "GB", "TB"]
+    size, uidx = sz_bytes, 0
+    while size >= 1024 and uidx < len(units) - 1:
+        size /= 1024.0
+        uidx += 1
+    return f"{size:.2f} {units[uidx]}"
+
+def fp(file_path: Path) -> Path:
+    """
+    Patch a given 'Path' object in a specific scenario:
+    The correct path is the same exact location, but with a .gz suffix, denoting gzip compression.
+    """
+    if not file_path.exists():
+        gz_path = file_path.with_suffix(file_path.suffix + ".gz")
+        if gz_path.exists():
+            return gz_path
+    return file_path

@@ -1,5 +1,5 @@
 import json, re, utils, ai
-from utils import FileUtils
+from utils import FileUtils, fp
 from settings import Settings, DataMode
 from datetime import timedelta
 from typing import List
@@ -109,25 +109,14 @@ def process(url: str) -> str:
     # use settings class (singleton)
     settings = Settings() # type: ignore
 
-    # get youtube video id
-    video_id = parse_video_id(url)
-    print(f"Extracted Video ID: {video_id}")
-    
     # file extension to cache certain ojects/data (json or bin)
     ext = settings.data_mode.ext()
 
+    video_id = parse_video_id(url)
     name = f"transcript_{video_id}"
-    transcript_path = utils.get_summawise_dir() / "youtube" / f"{name}.{ext}"
-    exists = transcript_path.exists()
+    transcript_path = fp(utils.get_summawise_dir() / "youtube" / f"{name}.{ext}")
 
-    if not exists and transcript_path.suffix != ".bin":
-        # check for gzipped variation of generated file path
-        gz_path = transcript_path.with_suffix(transcript_path.suffix + ".gz")
-        if gz_path.exists():
-            transcript_path = gz_path
-            exists = True
-
-    if not exists:
+    if not transcript_path.exists():
         # fetch transcript data from youtube
         try:
             transcript = get_transcript(video_id)

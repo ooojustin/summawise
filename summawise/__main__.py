@@ -25,15 +25,43 @@ def main():
         # TODO(justin): handle api key that becomes invalid *after* initial setup prompts
         ai.init(settings.api_key)
 
-    input_str = input("Enter a URL or local file path: ")
+    while True:
+        # prompt user for data source
+        input_str = input("Enter a URL or local file path: ")
 
+        # handle early exit prompts
+        if input_str.lower() in ["exit", "quit", ":q"]:
+            _ = input_str == ":q" and print("They should call you Vim Diesel.") # NOTE(justin): this is here to stay
+            return
+
+        # invoke process_input func to get VectorStore ID after data is processed
+        try:
+            vector_store_id = process_input(input_str)
+            break
+        except NotSupportedError as ex:
+            print(ex)
+            continue
+        except Exception as ex:
+            print(f"An unhandled error occurred while processing input:\n{ex}")
+            continue
+
+    # make sure the VectorStore ID we got seems correct
     try:
-        vector_store_id = process_input(input_str)
-    except NotSupportedError as ex:
-        print(ex)
+        assert len(vector_store_id) > 0, "empty"
+        assert vector_store_id.startswith("vs_"), "invalid format"
+    except AssertionError as ex:
+        print(f"An unknown occurred while processing input: invalid VectorStore ID. ({ex})")
         return
+
+    # verify vector store validity w/ openai, output some generic info
+    try:
+        vector_store = ai.client.beta.vector_stores.retrieve(vector_store_id) # model dump example: https://pastebin.com/k4fwANdi
+        name = vector_store.name
+        files = vector_store.file_counts.total
+        sz = utils.bytes_to_str(vector_store.usage_bytes)
+        print(f"Successfully established vector store! [{name}, {files} file(s), {sz}]")
     except Exception as ex:
-        print(f"An unhandled error occurred while processing input:\n{ex}")
+        print(f"Failed to validate VectorStore from provided ID (error: {type(ex)}, id: {vector_store_id}):\n{ex}")
         return
 
     try:
