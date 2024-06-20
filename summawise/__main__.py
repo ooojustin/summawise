@@ -1,5 +1,6 @@
 import ai, youtube, utils, validators
 from settings import init_settings
+from utils import DataUnit
 
 class NotSupportedError(Exception):
     def __init__(self):
@@ -8,6 +9,7 @@ class NotSupportedError(Exception):
 def process_input(input_str: str) -> str:
     """Takes user input, attempts to return OpenAI VectorStore ID after processing data."""
     if validators.url(input_str):
+
         # it's a URL
         url = input_str
 
@@ -58,7 +60,7 @@ def main():
         vector_store = ai.client.beta.vector_stores.retrieve(vector_store_id) # model dump example: https://pastebin.com/k4fwANdi
         name = vector_store.name
         files = vector_store.file_counts.total
-        sz = utils.bytes_to_str(vector_store.usage_bytes)
+        sz = DataUnit.bytes_to_str(vector_store.usage_bytes)
         print(f"Successfully established vector store! [{name}, {files} file(s), {sz}]")
     except Exception as ex:
         print(f"Failed to validate VectorStore from provided ID (error: {type(ex)}, id: {vector_store_id}):\n{ex}")
