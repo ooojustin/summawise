@@ -13,5 +13,5 @@ def process_file(file_path: Path, delete: bool = False) -> str:
     # - add archive support (.zip, .tar.gz) - extract, call process_dir
     # - maybe add automatic extraction of text from pdf or html (undecided)
     vector_store = ai.create_vector_store(file_path.stem, [file_path])
-    _ = delete and file_path.exists() and file_path.unlink()
+    if delete and file_path.exists(): file_path.unlink()
     return vector_store.id

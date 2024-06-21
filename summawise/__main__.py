@@ -1,4 +1,4 @@
-import ai, validators, requests, time
+import ai, validators, requests, time, sys
 from settings import init_settings
 from web import process_url
 from filesystem import process_file, process_dir
@@ -7,20 +7,6 @@ from typing import Optional
 from utils import DataUnit
 from pathlib import Path
 from errors import NotSupportedError
-
-def process_input(input_str: str) -> str:
-    """Takes user input, attempts to return OpenAI VectorStore ID after processing data."""
-    path = Path(input_str)
-    if path.exists():
-        if path.is_file():
-            return process_file(path)
-        elif path.is_dir():
-            return process_dir(path)
-
-    if validators.url(input_str):
-        return process_url(input_str)
-
-    raise NotSupportedError()
 
 def main():
     settings = init_settings()
@@ -31,17 +17,11 @@ def main():
 
     while True:
         # prompt user for data source
-        input_str = input("Enter a URL or local file path: ")
-        input_str = input_str.strip('\'"')
+        user_input = input("Enter a URL or local file path: ").strip('\'"')
 
-        # handle early exit prompts
-        if input_str.lower() in ["exit", "quit", ":q"]:
-            _ = input_str == ":q" and print("They should call you Vim Diesel.") # NOTE(justin): this is here to stay
-            return
-
-        # invoke process_input func to get VectorStore ID after data is processed
+        # invoke process_input func to handle processing of data and retrieve VectorStore ID
         try:
-            vector_store_id = process_input(input_str)
+            vector_store_id = process_input(user_input)
             break
         except NotSupportedError as ex:
             print(ex)
@@ -68,16 +48,16 @@ def main():
         try:
             first_run = vector_store is None
             vector_store = ai.client.beta.vector_stores.retrieve(vector_store_id) # model dump example: https://pastebin.com/k4fwANdi
+            assert vector_store.status != "expired", "VectorStore is expired."
 
             id, name = vector_store_id, vector_store.name
             total_files = vector_store.file_counts.total
             completed_files = vector_store.file_counts.completed
             pending_files = vector_store.file_counts.in_progress
+            processing = vector_store.status != "completed"
 
-            processing = pending_files > 0
             size_str = DataUnit.bytes_to_str(vector_store.usage_bytes)
             info = f"{id} ({name}), {completed_files}/{total_files} file(s), {size_str}"
-
             if first_run: 
                 print(f"Successfully established VectorStore!", end = " ")
                 if processing:
@@ -108,12 +88,33 @@ def main():
     print("\nYou can now ask questions about the transcript. Type 'exit' to quit.")
     while True:
         user_input = input("\nyou > ")
-        if user_input.lower() == "exit":
-            break
+        conditional_exit(user_input)
         try:
             ai.get_thread_response(thread.id, settings.assistant_id, user_input, auto_print = True)
         except Exception as e:
             print(f"Error in chat: {e}")
+
+def process_input(user_input: str) -> str:
+    """Takes user input, attempts to return OpenAI VectorStore ID after processing data."""
+    conditional_exit(user_input)
+
+    path = Path(user_input)
+    if path.exists():
+        if path.is_file():
+            return process_file(path)
+        elif path.is_dir():
+            return process_dir(path)
+
+    if validators.url(user_input):
+        return process_url(user_input)
+
+    raise NotSupportedError()
+
+def conditional_exit(user_input: str) -> None:
+    """Conditionally exit the program based on the users input."""
+    if user_input.lower() in ["exit", "quit", ":q"]:
+        if user_input == ":q": print("They should call you Vim Diesel.") # NOTE(justin): this is here to stay
+        sys.exit()
 
 if __name__ == "__main__":
     main()

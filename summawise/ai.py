@@ -18,12 +18,12 @@ class EventHandler(AssistantEventHandler):
     @override
     def on_text_created(self, text: Text) -> None:
         _ = text
-        _ = self.auto_print and print("\nsummawise > ", end = "", flush = True)
+        if self.auto_print: print("\nsummawise > ", end = "", flush = True)
 
     @override
     def on_text_delta(self, delta: TextDelta, snapshot: Text) -> None:
         _ = snapshot
-        _ = self.auto_print and print(delta.value, end = "", flush = True)
+        if self.auto_print: print(delta.value, end = "", flush = True)
 
     @override
     def on_tool_call_created(self, tool_call: ToolCall):
