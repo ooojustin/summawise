@@ -1,6 +1,6 @@
-import ai
+from . import ai
+from .errors import NotSupportedError
 from pathlib import Path
-from errors import NotSupportedError
 
 def process_dir(dir_path: Path, delete: bool = True) -> str:
     # TODO

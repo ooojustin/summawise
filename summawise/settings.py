@@ -1,5 +1,6 @@
-import json, utils, ai
-from utils import FileUtils, Singleton
+import json
+from . import utils, ai
+from .utils import FileUtils, Singleton
 from enum import Enum
 from dataclasses import dataclass, asdict, fields
 from typing import Dict, Any, ClassVar

@@ -1,8 +1,9 @@
-import requests, tempfile, youtube
-from filesystem import process_file
-from utils import DataUnit
+import requests, tempfile
+from . import youtube
+from .filesystem import process_file
+from .utils import DataUnit
+from .errors import NotSupportedError
 from pathlib import Path
-from errors import NotSupportedError
 
 def process_url(url: str) -> str:
     if youtube.is_url(url):

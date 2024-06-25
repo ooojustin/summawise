@@ -1,6 +1,7 @@
-import json, re, utils, ai
-from utils import FileUtils, fp
-from settings import Settings, DataMode
+import json, re
+from . import utils, ai
+from .utils import FileUtils, fp
+from .settings import Settings, DataMode
 from datetime import timedelta
 from typing import List
 from pathlib import Path
