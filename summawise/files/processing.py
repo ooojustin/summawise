@@ -1,33 +1,8 @@
-import json
-from . import ai, utils
-from .utils import FileUtils, Serializable, fp
-from .errors import NotSupportedError
-from .settings import Settings
-from dataclasses import dataclass
 from pathlib import Path
-
-@dataclass
-class FileMetadata(Serializable):
-    hash: str
-    name: str
-    full_path: str
-    sz_bytes: int
-    created_at: float
-    last_modified_at: float
-    last_accessed_at: float
-    vector_store_id: str = ""
-
-    @classmethod
-    def create_from_path(cls, file_path: Path) -> "FileMetadata":
-        hash = FileUtils.calculate_hash(file_path)
-        stats = file_path.stat()
-        sz_bytes = stats.st_size
-        created_at = stats.st_ctime
-        last_modified_at = stats.st_mtime
-        last_accessed_at = stats.st_atime
-
-        return cls(hash, file_path.name, str(file_path), sz_bytes,
-                   created_at, last_modified_at, last_accessed_at)    
+from .metadata import FileMetadata
+from .. import ai, utils
+from ..errors import NotSupportedError
+from ..settings import Settings
 
 def process_dir(dir_path: Path, delete: bool = True) -> str:
     # TODO
@@ -47,7 +22,7 @@ def process_file(file_path: Path, delete: bool = False) -> str:
 
     metadata = FileMetadata.create_from_path(file_path)
     hash = metadata.hash
-    hash_path = fp(utils.get_summawise_dir() / "files" / f"{hash}.{ext}")
+    hash_path = utils.fp(utils.get_summawise_dir() / "files" / f"{hash}.{ext}")
 
     vector_store_id: str = ""
     if not hash_path.exists():

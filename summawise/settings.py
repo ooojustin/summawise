@@ -1,9 +1,11 @@
 import json
-from . import utils, ai
-from .utils import FileUtils, Singleton, DataMode
 from dataclasses import dataclass, asdict, fields
 from typing import Dict, Any, ClassVar
 from openai import AuthenticationError, BadRequestError
+from . import utils, ai
+from .utils import Singleton
+from .data import DataMode
+from .files import utils as FileUtils
 
 @dataclass
 class Settings(metaclass = Singleton):

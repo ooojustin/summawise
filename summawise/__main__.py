@@ -1,13 +1,13 @@
 import validators, requests, time, sys
-from . import ai
-from .settings import init_settings
-from .web import process_url
-from .filesystem import process_file, process_dir
-from .utils import DataUnit
-from .errors import NotSupportedError
 from openai.types.beta import VectorStore 
 from typing import Optional
 from pathlib import Path
+from . import ai
+from .settings import init_settings
+from .web import process_url
+from .files.processing import process_file, process_dir
+from .data import DataUnit
+from .errors import NotSupportedError
 
 def main():
     settings = init_settings()
