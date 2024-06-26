@@ -1,6 +1,8 @@
 import json, re
 from . import utils, ai
-from .utils import DataMode, FileUtils, Serializable, fp
+from .utils import DataMode, fp
+from .files import utils as FileUtils
+from .serializable import Serializable
 from .settings import Settings
 from datetime import timedelta
 from typing import List

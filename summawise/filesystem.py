@@ -1,6 +1,7 @@
-import json
 from . import ai, utils
-from .utils import FileUtils, Serializable, fp
+from .utils import fp
+from .files import utils as FileUtils
+from .serializable import Serializable
 from .errors import NotSupportedError
 from .settings import Settings
 from dataclasses import dataclass

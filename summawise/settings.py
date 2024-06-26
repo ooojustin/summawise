@@ -1,6 +1,7 @@
 import json
 from . import utils, ai
-from .utils import FileUtils, Singleton, DataMode
+from .utils import Singleton, DataMode
+from .files import utils as FileUtils
 from dataclasses import dataclass, asdict, fields
 from typing import Dict, Any, ClassVar
 from openai import AuthenticationError, BadRequestError
