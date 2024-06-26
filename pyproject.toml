@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "summawise"
-version = "0.2.0"
+version = "0.2.1"
 description = "Summarize information from vectorized files using OpenAI's powerful models, and explore data further with an interactive prompt for deep dives into content."
 authors = [{ name = "Justin Garofolo", email = "justin@garofolo.net" }]
 license = { text = "GPLv3" }
@@ -39,6 +39,7 @@ Homepage = "https://github.com/ooojustin/summawise"
 Documentation = "https://github.com/ooojustin/summawise#readme"
 Source = "https://github.com/ooojustin/summawise"
 Tracker = "https://github.com/ooojustin/summawise/issues"
+Changelog = "https://github.com/ooojustin/summawise/blob/main/CHANGELOG.md"
 
 [project.scripts]
 summawise = "summawise.__main__:main"
