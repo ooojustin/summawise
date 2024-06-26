@@ -1,7 +1,7 @@
 import pickle, gzip, hashlib
 from pathlib import Path
 from typing import TypeVar, Type
-from ..utils import DataUnit
+from ..data import DataUnit
 
 T = TypeVar("T")
 

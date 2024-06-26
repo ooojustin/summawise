@@ -1,13 +1,13 @@
 import json, re
-from . import utils, ai
-from .utils import DataMode, fp
-from .files import utils as FileUtils
-from .serializable import Serializable
-from .settings import Settings
 from datetime import timedelta
 from typing import List
 from pathlib import Path
 from youtube_transcript_api import YouTubeTranscriptApi
+from . import utils, ai
+from .data import DataMode
+from .files import utils as FileUtils
+from .serializable import Serializable
+from .settings import Settings
 
 class TranscriptEntry:
 
@@ -102,7 +102,7 @@ def process_url(url: str) -> str:
 
     video_id = parse_video_id(url)
     name = f"transcript_{video_id}"
-    transcript_path = fp(utils.get_summawise_dir() / "youtube" / f"{name}.{ext}")
+    transcript_path = utils.fp(utils.get_summawise_dir() / "youtube" / f"{name}.{ext}")
 
     if not transcript_path.exists():
         # fetch transcript data from youtube
