@@ -1,13 +1,13 @@
 import json
 from . import ai, utils
-from .utils import FileUtils, fp
+from .utils import FileUtils, Serializable, fp
 from .errors import NotSupportedError
-from .settings import Settings, DataMode
-from dataclasses import dataclass, asdict
+from .settings import Settings
+from dataclasses import dataclass
 from pathlib import Path
 
 @dataclass
-class FileMetadata:
+class FileMetadata(Serializable):
     hash: str
     name: str
     full_path: str
@@ -28,30 +28,6 @@ class FileMetadata:
 
         return cls(hash, file_path.name, str(file_path), sz_bytes,
                    created_at, last_modified_at, last_accessed_at)    
-
-    def to_json(self, pretty: bool = True) -> str:
-        return json.dumps(asdict(self), indent = 4 if pretty else None)
-
-    def save_to_file(self, file_path: Path, mode: DataMode = DataMode.JSON, compress: bool = False):
-        if mode == DataMode.JSON:
-            json_str = self.to_json()
-            FileUtils.write_str(file_path, json_str, compress)
-        elif mode == DataMode.BIN:
-            FileUtils.save_object(file_path, self, compress)
-
-    @staticmethod
-    def from_file(file_path: Path, mode: DataMode = DataMode.JSON) -> "FileMetadata":
-        if mode == DataMode.JSON:
-            json_str = FileUtils.read_str(file_path)
-            return FileMetadata.from_json(json_str)
-        elif mode == DataMode.BIN:
-            return FileUtils.load_object(file_path, FileMetadata)
-
-    @staticmethod
-    def from_json(json_str: str) -> "FileMetadata":
-        data = json.loads(json_str)
-        metadata = FileMetadata(**data)
-        return metadata
 
 def process_dir(dir_path: Path, delete: bool = True) -> str:
     # TODO
