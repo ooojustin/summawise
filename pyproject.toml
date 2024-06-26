@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "summawise"
-version = "0.1.1"
+version = "0.1.2"
 description = "Summarize information from vectorized files using OpenAI's powerful models, and explore data further with an interactive prompt for deep dives into content."
 authors = [{ name = "Justin Garofolo", email = "justin@garofolo.net" }]
 license = { text = "GPLv3" }
@@ -27,10 +27,10 @@ classifiers = [
     "Typing :: Typed"
 ]
 dependencies = [
-    "openai >= 1.35.3",
-    "requests >= 2.32.3",
-    "validators >= 0.28.3",
-    "youtube-transcript-api >= 0.6.2"
+    "openai >= 1.35.0",
+    "requests >= 2.32.0",
+    "validators >= 0.28.0",
+    "youtube-transcript-api >= 0.6.0"
 ]
 requires-python = ">=3.8"
 
