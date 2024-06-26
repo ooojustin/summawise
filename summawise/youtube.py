@@ -110,7 +110,7 @@ def process_url(url: str) -> str:
     # use settings class (singleton)
     settings = Settings() # type: ignore
 
-    # file extension to cache certain ojects/data (json or bin)
+    # file extension to cache certain objects/data (json or bin)
     ext = settings.data_mode.ext()
 
     video_id = parse_video_id(url)
@@ -140,6 +140,6 @@ def process_url(url: str) -> str:
         # restore transcript object from file and use cached vector store id
         transcript = load_transcript(transcript_path, settings.data_mode)
         vector_store_id = transcript.vector_store_id
-        print(f"Restored vector store ID from cache: {transcript.vector_store_id}")
+        print(f"Restored vector store ID from cache: {vector_store_id}")
 
     return vector_store_id
