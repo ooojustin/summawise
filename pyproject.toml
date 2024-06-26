@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "summawise"
+version = "0.1.1"
+description = "Summarize information from vectorized files using OpenAI's powerful models, and explore data further with an interactive prompt for deep dives into content."
+authors = [{ name = "Justin Garofolo", email = "justin@garofolo.net" }]
+license = { text = "GPLv3" }
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Text Processing :: General",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed"
+]
+dependencies = [
+    "openai >= 1.35.3",
+    "requests >= 2.32.3",
+    "validators >= 0.28.3",
+    "youtube-transcript-api >= 0.6.2"
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/ooojustin/summawise"
+Documentation = "https://github.com/ooojustin/summawise#readme"
+Source = "https://github.com/ooojustin/summawise"
+Tracker = "https://github.com/ooojustin/summawise/issues"
+
+[project.scripts]
+summawise = "summawise.__main__:main"
