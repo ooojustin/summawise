@@ -1,24 +1,9 @@
 import json
 from . import utils, ai
-from .utils import FileUtils, Singleton
-from enum import Enum
+from .utils import FileUtils, Singleton, DataMode
 from dataclasses import dataclass, asdict, fields
 from typing import Dict, Any, ClassVar
 from openai import AuthenticationError, BadRequestError
-
-class DataMode(Enum):
-    JSON = "json"
-    BIN = "binary"
-
-    def ext(self) -> str:
-        extensions = {
-            DataMode.JSON: "json",
-            DataMode.BIN: "bin"
-        }
-        try:
-            return extensions[self]
-        except KeyError:
-            raise ValueError(f"Unsupported DataMode: {self}")
 
 @dataclass
 class Settings(metaclass = Singleton):
