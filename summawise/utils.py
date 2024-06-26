@@ -1,4 +1,4 @@
-import tempfile, pickle, gzip, inspect
+import tempfile, pickle, gzip, inspect, hashlib
 from pathlib import Path
 from typing import List, TypeVar, Type
 
@@ -98,6 +98,15 @@ class FileUtils:
     def load_object_any(file_path: Path) -> object:
         data = FileUtils.read_bytes(file_path)
         return pickle.loads(data)
+
+    @staticmethod
+    def calculate_hash(file_path: Path) -> str:
+        hash = hashlib.sha256()
+        with open(file_path, "rb") as f:
+            reader = lambda: f.read(8 * DataUnit.KB)
+            for chunk in iter(reader, b""):
+                hash.update(chunk)
+        return hash.hexdigest()
 
 def get_summawise_dir() -> Path:
     temp_dir = Path(tempfile.gettempdir())
