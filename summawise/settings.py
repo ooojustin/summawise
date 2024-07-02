@@ -1,6 +1,6 @@
-import json
+import json, os
 from dataclasses import dataclass, asdict, fields
-from typing import Dict, Any, ClassVar
+from typing import Union, Dict, Any, ClassVar
 from openai import AuthenticationError, BadRequestError
 from . import utils, ai
 from .utils import Singleton
@@ -55,14 +55,14 @@ def init_settings() -> Settings:
     return settings
 
 def prompt_for_settings() -> Settings:
-    while True:
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    api_key = validate_api_key(api_key)
+    
+    while api_key is None:
         api_key = input("Enter your OpenAI API key: ")
-        try:
-            ai.init(api_key)
-            break
-        except AuthenticationError:
+        api_key = validate_api_key(api_key)
+        if not api_key:
             print("The API key you entered is invalid. Try again.")
-            continue
 
     while True:
         try:
@@ -85,3 +85,10 @@ def prompt_for_settings() -> Settings:
         data_mode = Settings.DEFAULT_DATA_MODE,
         compression = Settings.DEFAULT_COMPRESSION
     )
+
+def validate_api_key(api_key: str) -> Union[str, None]:
+    try:
+        ai.init(api_key)
+        return api_key
+    except AuthenticationError:
+        return None
