@@ -4,6 +4,17 @@ All notable changes to summawise will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.2] - July 1st, 2024
+
+### Added
+
+- Attempt to restore OpenAI API key from environment variable (`OPENAI_API_KEY`) when initializing settings.
+- New [CHANGELOG.md](https://github.com/ooojustin/summawise/blob/main/CHANGELOG.md) file to track history of changes.
+
+### Changed
+
+- Switch build system from setuptools to hatchling.
+
 ## [0.2.0] - June 26th, 2024
 
 ### Added
