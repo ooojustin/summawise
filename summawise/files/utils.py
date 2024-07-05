@@ -1,6 +1,7 @@
-import pickle, gzip, hashlib
+import pickle, gzip, hashlib, chardet
 from pathlib import Path
-from typing import TypeVar, Type, List
+from typing import TypeVar, Type, List, Optional
+from .encodings import Encoding
 from ..data import DataUnit
 
 T = TypeVar("T")
@@ -65,3 +66,23 @@ def list_files(directory: Path, recursive: bool = True) -> List[Path]:
         elif item.is_dir() and recursive:
             files.extend(list_files(item, recursive = True))
     return files
+
+def get_encoding(file_path: Path) -> Optional[Encoding]:
+    """
+    Attempts to determine the encoding of a file based on the first 4 KB. If none is recognized, the function returns 'None'.
+    Supported encodings: https://link.justin.ooo/chardet-encodings
+    """
+    with file_path.open('rb') as f:
+        raw_data = f.read(4 * DataUnit.KB) # read the first 4KB of the file
+        result = chardet.detect(raw_data)
+        encoding_str = result.get("encoding")
+        if isinstance(encoding_str, str):
+            encoding = Encoding.from_string(encoding_str)
+            return encoding
+    return None
+
+def has_parent_directory(path: Path, dir_name: str) -> bool:
+    normalize = lambda s: f"/{s.strip('/\\').replace('\\', '/')}/"
+    dir_name = normalize(dir_name)
+    path_str = normalize(str(path))
+    return dir_name in path_str
