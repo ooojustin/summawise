@@ -16,7 +16,7 @@ def main():
 
     if not hasattr(ai, "client"):
         # TODO(justin): handle api key that becomes invalid *after* initial setup prompts
-        ai.init(settings.api_key)
+        ai.init(settings.api_key, verify = False)
 
     while True:
         # prompt user for data source

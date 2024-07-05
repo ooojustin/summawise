@@ -25,4 +25,3 @@ class FileMetadata(Serializable):
 
         return cls(hash, file_path.name, str(file_path), sz_bytes,
                    created_at, last_modified_at, last_accessed_at)    
-

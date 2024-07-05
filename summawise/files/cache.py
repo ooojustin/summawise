@@ -18,6 +18,7 @@ class FileCacheObj(Serializable):
     def __init__(self, cache: Dict[str, str] = {}):
         self._cache = cache
         self.settings = Settings() # type: ignore
+        self.path = utils.get_summawise_dir() / f"file_cache.{self.settings.data_mode.ext()}"
 
     def set_hash_file_id(self, hash: str, file_id: str):
         self._cache[hash] = file_id
@@ -32,13 +33,17 @@ class FileCacheObj(Serializable):
         settings = cache.settings
 
         # if the file doesn't exist, save empty version by default
-        cache_path = utils.get_summawise_dir() / f"file_cache.{settings.data_mode.ext()}"
-        if not cache_path.exists():
-            cache.save_to_file(cache_path, settings.data_mode, settings.compression)
+        if not cache.path.exists():
+            cache.save()
             return cache
 
         # if the file does exist, use functionality fom Serializable base class to establish populated object
-        return cache.from_file(cache_path, settings.data_mode)
+        return cache.from_file(cache.path, settings.data_mode)
+
+    def save(self):
+        data_mode = self.settings.data_mode
+        compress = self.settings.compression
+        self.save_to_file(self.path, data_mode, compress, pretty_json = True)
 
     @classmethod
     def from_json(cls, json_str: str) -> "FileCacheObj":

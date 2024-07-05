@@ -43,7 +43,8 @@ def process_file(file_path: Path, delete: bool = False) -> str:
             metadata.save_to_file(
                 file_path = hash_path,
                 mode = settings.data_mode,
-                compress = settings.compression
+                compress = settings.compression,
+                pretty_json = True
             )
             vector_store_id = metadata.vector_store_id
             print(f"Vector store created with ID: {vector_store_id}")
