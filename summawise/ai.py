@@ -1,12 +1,17 @@
 from typing_extensions import override
-from typing import List
+from typing import Optional, List, NamedTuple
 from pathlib import Path
 from openai import OpenAI, AssistantEventHandler
+from openai.types.file_object import FileObject
 from openai.types.beta import Thread, Assistant, VectorStore 
 from openai.types.beta.threads import TextContentBlock, TextDelta, Message, Text
 from openai.types.beta.threads.runs import ToolCall
+from . import utils
+from .files import utils as FileUtils
+from .files.cache import FileCacheObj
 
 client: OpenAI
+FileCache: FileCacheObj
 
 class EventHandler(AssistantEventHandler):
 
@@ -58,12 +63,42 @@ def init(api_key: str, verify: bool = True):
     if verify:
         client.models.list()
 
-def create_vector_store(name: str, files: List[Path]) -> VectorStore:
-    file_ids: List[str] = []
+class FileInfo(NamedTuple):
+    hash: str
+    file_id: str
+    cached: bool = False
+
+def create_file(file_path: Path) -> FileObject:
+    with open(file_path, 'rb') as file:
+        file_response = client.files.create(file = file, purpose = "assistants")
+        return file_response
+
+def get_file_infos(files: List[Path]) -> List[FileInfo]:
+    file_infos: List[FileInfo] = []
     for file_path in files:
-        with open(file_path, 'rb') as file:
-            file_response = client.files.create(file = file, purpose = "assistants")
-            file_ids.append(file_response.id)
+        hash = FileUtils.calculate_hash(file_path)
+        file_id = FileCache.get_file_id_by_hash(hash)
+        if file_id is None:
+            # not cached, upload new file
+            file = create_file(file_path)
+            info = FileInfo(hash, file.id,)
+            file_infos.append(info)
+            FileCache.set_hash_file_id(hash, file.id)
+        else:
+            # use cached file id
+            info = FileInfo(hash, file_id, True)
+            file_infos.append(info)
+    FileCache.save()
+    return file_infos
+
+def create_vector_store(name: str, file_paths: List[Path]) -> VectorStore:
+    print(f"Creating vector store with {len(file_paths)} files.", end = " ")
+    file_infos = get_file_infos(file_paths)
+    file_ids = [info.file_id for info in file_infos]
+
+    cached_count = sum(1 for info in file_infos if info.cached)
+    print(f"[{cached_count} file(s) already cached]" if cached_count > 0 else "")
+
     vector_store = client.beta.vector_stores.create(name = name, file_ids = file_ids)
     return vector_store
 
@@ -96,3 +131,7 @@ def get_thread_response(thread_id: str, assistant_id: str, prompt: str, auto_pri
         stream.until_done()
 
     return event_handler.response_text
+
+def set_file_cache(file_cache: FileCacheObj):
+    global FileCache
+    FileCache = file_cache
