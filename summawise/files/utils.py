@@ -1,6 +1,6 @@
 import pickle, gzip, hashlib, chardet
 from pathlib import Path
-from typing import TypeVar, Type, List, Optional
+from typing import TypeVar, Type, List, Optional, NamedTuple
 from .encodings import Encoding
 from ..data import DataUnit
 
@@ -86,3 +86,30 @@ def has_parent_directory(path: Path, dir_name: str) -> bool:
     dir_name = normalize(dir_name)
     path_str = normalize(str(path))
     return dir_name in path_str
+
+class FilteredFiles(NamedTuple):
+    files: List[Path]
+    total_count: int
+    valid_count: int
+
+def filter_files(all_files: List[Path]) -> FilteredFiles:
+    encoding_whitelist = [Encoding.UTF_8, Encoding.ASCII]
+    dir_blacklist = [".git", "node_modules", "site-packages"]
+    extension_whitelist = {
+        '.py', '.js', '.txt', '.md', '.html', '.css', '.java', '.c', '.cpp',
+        '.rb', '.php', '.ts', '.json', '.xml', '.csv', '.xlsx', '.pptx', '.docx',
+        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.zip', '.tar', '.tex'
+    }
+
+    files = [
+        file_path for file_path in all_files
+        if file_path.suffix in extension_whitelist \
+        and get_encoding(file_path) in encoding_whitelist \
+        and not any(has_parent_directory(file_path, dir) for dir in dir_blacklist)
+    ]
+
+    return FilteredFiles(
+        files = files,
+        total_count = len(all_files),
+        valid_count = len(files)
+    )
