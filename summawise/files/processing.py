@@ -11,7 +11,7 @@ def process_dir(dir_path: Path, delete: bool = True) -> str:
     files = FileUtils.list_files(dir_path)
     filtered = FileUtils.filter_files(files) # TODO(justin): look into improving/validating approach
     try:
-        print(f"Creating vector store with {filtered.valid_count}/{filtered.total_count} scanned and validated files.")
+        print(f"Directory scan located and validated {filtered.valid_count}/{filtered.total_count} files.")
         vector_store = ai.create_vector_store(dir_path.name, filtered.files)
         vector_store_id = vector_store.id
         print(f"Vector store created with ID: {vector_store_id}")

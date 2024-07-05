@@ -66,11 +66,7 @@ def init(api_key: str, verify: bool = True):
 class FileInfo(NamedTuple):
     hash: str
     file_id: str
-    file: Optional[FileObject] = None
-
-    @property
-    def cached(self):
-        return self.file is not None
+    cached: bool = False
 
 def create_file(file_path: Path) -> FileObject:
     with open(file_path, 'rb') as file:
@@ -85,24 +81,23 @@ def get_file_infos(files: List[Path]) -> List[FileInfo]:
         if file_id is None:
             # not cached, upload new file
             file = create_file(file_path)
-            info = FileInfo(hash, file.id, file)
+            info = FileInfo(hash, file.id,)
             file_infos.append(info)
             FileCache.set_hash_file_id(hash, file.id)
         else:
             # use cached file id
-            info = FileInfo(hash, file_id)
+            info = FileInfo(hash, file_id, True)
             file_infos.append(info)
     FileCache.save()
     return file_infos
 
 def create_vector_store(name: str, file_paths: List[Path]) -> VectorStore:
+    print(f"Creating vector store with {len(file_paths)} files.", end = " ")
     file_infos = get_file_infos(file_paths)
     file_ids = [info.file_id for info in file_infos]
 
     cached_count = sum(1 for info in file_infos if info.cached)
-    msg = f"Creating vector store with {len(file_infos)} file(s)."
-    if cached_count > 0:
-        msg += f" ({cached_count} are already cached)"
+    print(f"[{cached_count} file(s) already cached]" if cached_count > 0 else "")
 
     vector_store = client.beta.vector_stores.create(name = name, file_ids = file_ids)
     return vector_store
