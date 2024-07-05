@@ -1,6 +1,6 @@
 import pickle, gzip, hashlib
 from pathlib import Path
-from typing import TypeVar, Type
+from typing import TypeVar, Type, List
 from ..data import DataUnit
 
 T = TypeVar("T")
@@ -55,3 +55,13 @@ def calculate_hash(file_path: Path) -> str:
         for chunk in iter(reader, b""):
             hash.update(chunk)
     return hash.hexdigest()
+
+def list_files(directory: Path, recursive: bool = True) -> List[Path]:
+    assert directory.is_dir(), f"The provided path to 'list_files' must be a directory. (Value: '{directory}')"
+    files = []
+    for item in directory.iterdir():
+        if item.is_file():
+            files.append(item)
+        elif item.is_dir() and recursive:
+            files.extend(list_files(item, recursive = True))
+    return files
