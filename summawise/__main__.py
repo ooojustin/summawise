@@ -6,11 +6,13 @@ from . import ai
 from .settings import init_settings
 from .web import process_url
 from .files.processing import process_file, process_dir
+from .files import cache as FileCache
 from .data import DataUnit
 from .errors import NotSupportedError
 
 def main():
     settings = init_settings()
+    FileCache.init()
 
     if not hasattr(ai, "client"):
         # TODO(justin): handle api key that becomes invalid *after* initial setup prompts

@@ -5,6 +5,7 @@ from openai import OpenAI, AssistantEventHandler
 from openai.types.beta import Thread, Assistant, VectorStore 
 from openai.types.beta.threads import TextContentBlock, TextDelta, Message, Text
 from openai.types.beta.threads.runs import ToolCall
+from .files.cache import FileCacheObj
 
 client: OpenAI
 
@@ -96,3 +97,7 @@ def get_thread_response(thread_id: str, assistant_id: str, prompt: str, auto_pri
         stream.until_done()
 
     return event_handler.response_text
+
+def set_file_cache(file_cache: FileCacheObj):
+    global FileCache
+    FileCache = file_cache
