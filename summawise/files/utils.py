@@ -1,6 +1,7 @@
-import pickle, gzip, hashlib
+import pickle, gzip, hashlib, chardet
 from pathlib import Path
-from typing import TypeVar, Type
+from typing import TypeVar, Type, List, Optional, NamedTuple
+from .encodings import Encoding
 from ..data import DataUnit
 
 T = TypeVar("T")
@@ -55,3 +56,60 @@ def calculate_hash(file_path: Path) -> str:
         for chunk in iter(reader, b""):
             hash.update(chunk)
     return hash.hexdigest()
+
+def list_files(directory: Path, recursive: bool = True) -> List[Path]:
+    assert directory.is_dir(), f"The provided path to 'list_files' must be a directory. (Value: '{directory}')"
+    files = []
+    for item in directory.iterdir():
+        if item.is_file():
+            files.append(item)
+        elif item.is_dir() and recursive:
+            files.extend(list_files(item, recursive = True))
+    return files
+
+def get_encoding(file_path: Path) -> Optional[Encoding]:
+    """
+    Attempts to determine the encoding of a file based on the first 4 KB. If none is recognized, the function returns 'None'.
+    Supported encodings: https://link.justin.ooo/chardet-encodings
+    """
+    with file_path.open('rb') as f:
+        raw_data = f.read(4 * DataUnit.KB) # read the first 4KB of the file
+        result = chardet.detect(raw_data)
+        encoding_str = result.get("encoding")
+        if isinstance(encoding_str, str):
+            encoding = Encoding.from_string(encoding_str)
+            return encoding
+    return None
+
+def has_parent_directory(path: Path, dir_name: str) -> bool:
+    normalize = lambda s: f"/{s.strip('/\\').replace('\\', '/')}/"
+    dir_name = normalize(dir_name)
+    path_str = normalize(str(path))
+    return dir_name in path_str
+
+class FilteredFiles(NamedTuple):
+    files: List[Path]
+    total_count: int
+    valid_count: int
+
+def filter_files(all_files: List[Path]) -> FilteredFiles:
+    encoding_whitelist = [Encoding.UTF_8, Encoding.ASCII]
+    dir_blacklist = [".git", "node_modules", "site-packages"]
+    extension_whitelist = {
+        '.py', '.js', '.txt', '.md', '.html', '.css', '.java', '.c', '.cpp',
+        '.rb', '.php', '.ts', '.json', '.xml', '.csv', '.xlsx', '.pptx', '.docx',
+        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.zip', '.tar', '.tex'
+    }
+
+    files = [
+        file_path for file_path in all_files
+        if file_path.suffix in extension_whitelist \
+        and get_encoding(file_path) in encoding_whitelist \
+        and not any(has_parent_directory(file_path, dir) for dir in dir_blacklist)
+    ]
+
+    return FilteredFiles(
+        files = files,
+        total_count = len(all_files),
+        valid_count = len(files)
+    )

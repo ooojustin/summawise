@@ -1,13 +1,24 @@
 from pathlib import Path
 from .metadata import FileMetadata
+from . import utils as FileUtils
 from .. import ai, utils
 from ..errors import NotSupportedError
 from ..settings import Settings
 
 def process_dir(dir_path: Path, delete: bool = True) -> str:
-    # TODO
-    _, _ = dir_path, delete
-    raise NotSupportedError()
+    _ = delete
+
+    files = FileUtils.list_files(dir_path)
+    filtered = FileUtils.filter_files(files) # TODO(justin): look into improving/validating approach
+    try:
+        print(f"Creating vector store with {filtered.valid_count}/{filtered.total_count} scanned and validated files.")
+        vector_store = ai.create_vector_store(dir_path.name, filtered.files)
+        vector_store_id = vector_store.id
+        print(f"Vector store created with ID: {vector_store_id}")
+    except Exception as ex:
+        raise Exception(f"Error creating vector store [{type(ex)}]: {ex}")
+
+    return vector_store_id
 
 def process_file(file_path: Path, delete: bool = False) -> str:
     # TODO(justin): 
