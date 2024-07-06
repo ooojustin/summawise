@@ -2,7 +2,6 @@ from pathlib import Path
 from .metadata import FileMetadata
 from . import utils as FileUtils
 from .. import ai, utils
-from ..errors import NotSupportedError
 from ..settings import Settings
 
 def process_dir(dir_path: Path, delete: bool = True) -> str:

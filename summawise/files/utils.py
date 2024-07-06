@@ -4,6 +4,7 @@ from pathlib import Path
 from enum import Enum
 from .encodings import Encoding
 from ..data import DataUnit
+from ..utils import assert_type
 
 T = TypeVar("T")
 
@@ -69,6 +70,7 @@ def calculate_hash(
     algorithm: HashAlg = HashAlg.SHA3_256,
     intdigest: bool = False
 ) -> Union[str, int]:
+    assert_type(_input, (bytes, str, Path))
     hash_obj = algorithm.init()
 
     if isinstance(_input, (bytes, str)):
@@ -78,8 +80,6 @@ def calculate_hash(
         with open(_input, "rb") as f:
             for chunk in iter(lambda: f.read(8 * DataUnit.KB), b""):
                 hash_obj.update(chunk)
-    else:
-        raise TypeError("Input to 'calculate_hash' must be of type 'str', 'bytes', or 'Path'.")
 
     return (
         hash_obj.hexdigest() if not intdigest else
