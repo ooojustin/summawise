@@ -6,8 +6,8 @@ All notable changes to summawise will be documented in this file.
 
 - Added support for directories being used as input, storing many files in a vector store.
   - Since I plan on expanding the use cases of this project, it is already designed to support codebases.
-  - There are substantial improvements I plan on making to reduce wasting resources via the API.
-    This includes re-using File IDs based on their SHA256 hash when creating a new vector store.
+- Cache all file IDs based on file hash to be re-used in new vector stores.
+- Expanded and optimized hash calculation capabilities.
 
 ## [0.2.2] - July 1st, 2024
 
