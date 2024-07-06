@@ -14,7 +14,7 @@ def main():
     settings = init_settings()
     FileCache.init()
 
-    if not hasattr(ai, "client"):
+    if not hasattr(ai, "Client"):
         # TODO(justin): handle api key that becomes invalid *after* initial setup prompts
         ai.init(settings.api_key, verify = False)
 
@@ -50,7 +50,7 @@ def main():
     while processing:
         try:
             first_run = vector_store is None
-            vector_store = ai.client.beta.vector_stores.retrieve(vector_store_id) # model dump example: https://pastebin.com/k4fwANdi
+            vector_store = ai.Client.beta.vector_stores.retrieve(vector_store_id) # model dump example: https://pastebin.com/k4fwANdi
             assert vector_store.status != "expired", "VectorStore is expired."
 
             id, name = vector_store_id, vector_store.name

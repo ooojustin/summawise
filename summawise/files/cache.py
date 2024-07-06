@@ -4,7 +4,6 @@ from ..settings import Settings
 from ..serializable import Serializable
 from .. import utils, ai
 
-
 FileCache: "FileCacheObj"
 
 def init():

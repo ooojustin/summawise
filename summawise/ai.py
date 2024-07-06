@@ -1,16 +1,15 @@
 from typing_extensions import override
-from typing import Optional, List, NamedTuple
+from typing import List, NamedTuple
 from pathlib import Path
 from openai import OpenAI, AssistantEventHandler
 from openai.types.file_object import FileObject
 from openai.types.beta import Thread, Assistant, VectorStore 
 from openai.types.beta.threads import TextContentBlock, TextDelta, Message, Text
 from openai.types.beta.threads.runs import ToolCall
-from . import utils
 from .files import utils as FileUtils
 from .files.cache import FileCacheObj
 
-client: OpenAI
+Client: OpenAI
 FileCache: FileCacheObj
 
 class EventHandler(AssistantEventHandler):
@@ -57,11 +56,11 @@ def init(api_key: str, verify: bool = True):
     if not api_key or not isinstance(api_key, str):
         raise ValueError("API key must be a non-empty string.")
     
-    global client
-    client = OpenAI(api_key = api_key)
+    global Client
+    Client = OpenAI(api_key = api_key)
     
     if verify:
-        client.models.list()
+        Client.models.list()
 
 class FileInfo(NamedTuple):
     hash: str
@@ -70,13 +69,17 @@ class FileInfo(NamedTuple):
 
 def create_file(file_path: Path) -> FileObject:
     with open(file_path, 'rb') as file:
-        file_response = client.files.create(file = file, purpose = "assistants")
+        file_response = Client.files.create(file = file, purpose = "assistants")
         return file_response
 
 def get_file_infos(files: List[Path]) -> List[FileInfo]:
     file_infos: List[FileInfo] = []
     for file_path in files:
+
         hash = FileUtils.calculate_hash(file_path)
+        assert isinstance(hash, str), \
+            "Calculated hash should be of type 'str'. Ensure the 'intdigest' parameter is set to false."
+
         file_id = FileCache.get_file_id_by_hash(hash)
         if file_id is None:
             # not cached, upload new file
@@ -88,23 +91,24 @@ def get_file_infos(files: List[Path]) -> List[FileInfo]:
             # use cached file id
             info = FileInfo(hash, file_id, True)
             file_infos.append(info)
+
     FileCache.save()
     return file_infos
 
 def create_vector_store(name: str, file_paths: List[Path]) -> VectorStore:
-    print(f"Creating vector store with {len(file_paths)} files.", end = " ")
+    print(f"Creating vector store with {len(file_paths)} file(s).", end = " ")
     file_infos = get_file_infos(file_paths)
     file_ids = [info.file_id for info in file_infos]
 
     cached_count = sum(1 for info in file_infos if info.cached)
     print(f"[{cached_count} file(s) already cached]" if cached_count > 0 else "")
 
-    vector_store = client.beta.vector_stores.create(name = name, file_ids = file_ids)
+    vector_store = Client.beta.vector_stores.create(name = name, file_ids = file_ids)
     return vector_store
 
 def create_assistant(model: str) -> Assistant:
     # TODO(justin): more generic instructions, since this program is for more than just video transcripts
-    assistant = client.beta.assistants.create(
+    assistant = Client.beta.assistants.create(
         name = "Transcript Analysis Assistant",
         instructions = "You are an assistant that summarizes video transcripts and answers questions about them.",
         model = model,
@@ -113,17 +117,17 @@ def create_assistant(model: str) -> Assistant:
     return assistant
 
 def create_thread(vector_store_ids: List[str], question: str) -> Thread:
-    thread = client.beta.threads.create(
+    thread = Client.beta.threads.create(
         messages = [{"role": "user", "content": question}],
         tool_resources = {"file_search": {"vector_store_ids": vector_store_ids}}
     )
     return thread
 
 def get_thread_response(thread_id: str, assistant_id: str, prompt: str, auto_print: bool = False) -> str:
-    client.beta.threads.messages.create(thread_id = thread_id, content = prompt, role = "user")
+    Client.beta.threads.messages.create(thread_id = thread_id, content = prompt, role = "user")
 
     event_handler = EventHandler(auto_print = auto_print)
-    with client.beta.threads.runs.stream(
+    with Client.beta.threads.runs.stream(
         thread_id = thread_id,
         assistant_id = assistant_id,
         event_handler = event_handler
