@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "summawise"
-version = "0.2.2"
+version = "0.2.3"
 description = "Summarize information from vectorized files using OpenAI's powerful models, and explore data further with an interactive prompt for deep dives into content."
 authors = [{ name = "Justin Garofolo", email = "justin@garofolo.net" }]
 license = { text = "GPLv3" }
