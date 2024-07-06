@@ -46,8 +46,6 @@ class Serializable:
                     f"so it must provide its own implementation of 'from_json'.\nException: {ex}"
                 )
             else:
-                # NOTE(justin):  My LSP gives me a 'Code is unreachable' warning here, but that is not accurate.
-                # It is likely due to cls being a TypeVar, resulting in the LSP believing it can't be a dataclass.
                 raise Exception(
                     f"Unexpected exception occurred while invoking '{cls.__name__}.from_json' on @dataclass.\n"
                     f"Exception: {ex}"
