@@ -2,6 +2,8 @@ import json, os
 from dataclasses import dataclass, asdict, fields
 from typing import Union, Dict, Any, ClassVar
 from openai import AuthenticationError, BadRequestError
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
 from . import utils, ai
 from .utils import Singleton
 from .data import DataMode
@@ -59,14 +61,15 @@ def prompt_for_settings() -> Settings:
     api_key = validate_api_key(api_key)
     
     while api_key is None:
-        api_key = input("Enter your OpenAI API key: ")
+        api_key = prompt("Enter your OpenAI API key: ")
         api_key = validate_api_key(api_key)
         if not api_key:
             print("The API key you entered is invalid. Try again.")
 
+    model_completer = WordCompleter(["gpt-4o", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"])
     while True:
         try:
-            model = input(f"Enter the OpenAI model to use [Default: {Settings.DEFAULT_MODEL}]: ")
+            model = prompt(f"Enter the OpenAI model to use [Default: {Settings.DEFAULT_MODEL}]: ", completer = model_completer)
             assistant = ai.create_assistant(model or Settings.DEFAULT_MODEL)
             break
         except BadRequestError as ex:

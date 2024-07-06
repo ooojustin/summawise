@@ -1,5 +1,6 @@
 import validators, requests, time, sys
 from openai.types.beta import VectorStore 
+from prompt_toolkit import prompt
 from typing import Optional
 from pathlib import Path
 from . import ai
@@ -20,7 +21,7 @@ def main():
 
     while True:
         # prompt user for data source
-        user_input = input("Enter a URL or local file path: ").strip('\'"')
+        user_input = prompt("Enter a URL or local file path: ").strip('\'"')
 
         # invoke process_input func to handle processing of data and retrieve VectorStore ID
         try:
@@ -90,7 +91,7 @@ def main():
     
     print("\nYou can now ask questions about the transcript. Type 'exit' to quit.")
     while True:
-        user_input = input("\nyou > ")
+        user_input = prompt("\nyou > ")
         conditional_exit(user_input)
         try:
             ai.get_thread_response(thread.id, settings.assistant_id, user_input, auto_print = True)
