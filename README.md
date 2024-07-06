@@ -4,6 +4,14 @@
 
 Summarize information from vectorized files using OpenAI's powerful models, and explore data further with an interactive prompt for deep dives into content.
 
+## Installation
+
+For the sake of convenience (and to be added to your `$PATH`), the program is available via PyPI:
+
+```bash
+pip install --upgrade summawise
+```
+
 ## Notes
 
 This tool uses OpenAI API features which are currently in beta.
