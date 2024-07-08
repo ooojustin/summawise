@@ -1,7 +1,7 @@
 import validators, requests, time, sys
 from openai.types.beta import VectorStore 
 from prompt_toolkit import prompt
-from typing import Optional
+from typing import Tuple, Optional
 from pathlib import Path
 from . import ai
 from .settings import init_settings
@@ -10,31 +10,49 @@ from .files.processing import process_file, process_dir
 from .files import cache as FileCache
 from .data import DataUnit
 from .errors import NotSupportedError
+import click
 
-def main():
+CONTEXT_SETTINGS = {"max_content_width": sys.maxsize}
+
+@click.group(context_settings = CONTEXT_SETTINGS)
+def cli():
+    """A tool to use AI to analyze and interact with vectorized data from custom sources of information."""
+    pass
+
+@cli.command()
+@click.argument("user_input", nargs = -1)
+def scan(user_input: Tuple[str, ...]):
+    """Scan and process the given input (URL or file path), and offer an interactive prompt to inquire about the vectorized data."""
     settings = init_settings()
     FileCache.init()
 
     if not hasattr(ai, "Client"):
-        # TODO(justin): handle api key that becomes invalid *after* initial setup prompts
-        ai.init(settings.api_key, verify = False)
+        ai.init(settings.api_key, verify=False)
 
     while True:
-        # prompt user for data source
-        user_input = prompt("Enter a URL or local file path: ").strip('\'"')
+        # prompt user for data source if not provided as an argument
+        if user_input:
+            input_str = "".join(user_input)
+        else:
+            input_str = prompt("Enter a URL or local file path: ").strip('\'"')
+
+        print(input_str)
 
         # invoke process_input func to handle processing of data and retrieve VectorStore ID
         try:
-            vector_store_id = process_input(user_input)
+            vector_store_id = process_input(input_str)
             break
         except NotSupportedError as ex:
             print(ex)
+            user_input = ()
             continue
         except (requests.RequestException, requests.HTTPError) as ex:
             print(f"An error occurred while sending a web request to the provided URL:\n{ex}")
+            user_input = ()
             continue
         except Exception as ex:
             print(f"An unhandled error occurred while processing input:\n{ex}")
+            user_input = ()
             continue
 
     # make sure the VectorStore ID we got seems correct
@@ -119,3 +137,6 @@ def conditional_exit(user_input: str) -> None:
     if user_input.lower() in ["exit", "quit", ":q"]:
         if user_input == ":q": print("They should call you Vim Diesel.") # NOTE(justin): this is here to stay
         sys.exit()
+
+def main():
+    cli()
