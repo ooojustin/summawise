@@ -109,10 +109,10 @@ def scan(user_input: Tuple[str, ...]):
     
     print("\nYou can now ask questions about the transcript. Type 'exit' to quit.")
     while True:
-        user_input = prompt("\nyou > ")
-        conditional_exit(user_input)
+        input_str = prompt("\nyou > ")
+        conditional_exit(input_str)
         try:
-            ai.get_thread_response(thread.id, settings.assistant_id, user_input, auto_print = True)
+            ai.get_thread_response(thread.id, settings.assistant_id, input_str, auto_print = True)
         except Exception as e:
             print(f"Error in chat: {e}")
 
