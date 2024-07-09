@@ -1,5 +1,6 @@
 import tempfile
-from typing import Any, Union, Tuple
+from dataclasses import is_dataclass, fields
+from typing import Any, Union, Tuple, Set, Dict
 from pathlib import Path
 from .errors import ValueTypeError
 
@@ -41,3 +42,26 @@ def assert_type(value: Any, type_or_types: Union[type, Tuple[type, ...]]) -> Non
         raise TypeError("Function 'assert_type' parameter 'type_or_types' must be a type, or a tuple of types.")
     elif not isinstance(value, type_or_types):
         raise ValueTypeError(value, type_or_types)
+
+def asdict_exclude(obj: Any, exclude: Set[str]) -> Dict[str, Any]:
+    """
+    Convert a dataclass object to a dictionary, excluding specified fields.
+
+    Parameters:
+        obj (Any): The dataclass object to convert to a dictionary.
+        exclude (Set[str]): A set of field names to exclude from the resulting dictionary.
+
+    Returns:
+        Dict[str, Any]: A dictionary representation of the dataclass object, excluding the specified fields.
+
+    Raises:
+        TypeError: If the input object is not a dataclass.
+    """
+    if not is_dataclass(obj):
+        raise TypeError("Object must be a dataclass.")
+
+    result = {}
+    for f in fields(obj):
+        if f.name not in exclude:
+            result[f.name] = getattr(obj, f.name)
+    return result
