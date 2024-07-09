@@ -137,9 +137,8 @@ def create_assistant(
     )
     return assistant
 
-def create_thread(vector_store_ids: List[str], question: str) -> Thread:
+def create_thread(vector_store_ids: List[str]) -> Thread:
     thread = Client.beta.threads.create(
-        messages = [{"role": "user", "content": question}],
         tool_resources = {"file_search": {"vector_store_ids": vector_store_ids}}
     )
     return thread

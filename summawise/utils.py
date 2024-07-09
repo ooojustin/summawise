@@ -1,4 +1,4 @@
-import tempfile
+import tempfile, sys
 from importlib import metadata
 from dataclasses import is_dataclass, fields
 from typing import Any, Union, Tuple, Set, Dict
@@ -106,3 +106,18 @@ class NumericChoiceValidator(Validator):
                 message="Input the number corresponding with your choice.",
                 cursor_position=len(document.text)
             )
+
+def delete_lines(count: int = 1):
+    """
+    Deletes the specified number of lines from the terminal output.
+    VT100 docs: https://vt100.net/docs/vt100-ug/chapter3.html
+
+    Parameters:
+        count (int): The number of lines to delete. Default is 1.
+    """
+    CURSOR_UP_ONE = '\x1b[1A'
+    ERASE_LINE = '\x1b[2K'
+    for _ in range(count):
+        sys.stdout.write(CURSOR_UP_ONE)
+        sys.stdout.write(ERASE_LINE)
+    sys.stdout.flush()
