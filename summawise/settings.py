@@ -1,6 +1,6 @@
 import json, os
-from dataclasses import dataclass, asdict, fields
-from typing import Union, Dict, Any, ClassVar
+from dataclasses import dataclass, asdict, fields, field
+from typing import Set, List, Union, Dict, Any, ClassVar
 from openai import AuthenticationError, BadRequestError
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
@@ -8,18 +8,21 @@ from . import utils, ai
 from .utils import Singleton
 from .data import DataMode
 from .files import utils as FileUtils
-
+from .assistants import DEFAULT_ASSISTANTS, DEFAULT_MODEL, Assistant
+    
 @dataclass
 class Settings(metaclass = Singleton):
     api_key: str
-    assistant_id: str
+    assistant_id: str = field(repr = False) # NOTE(justin): deprecated in version 0.3.0
+    assistants: Dict[str, str]
     model: str
     compression: bool
     data_mode: DataMode
 
-    DEFAULT_MODEL: ClassVar[str] = "gpt-3.5-turbo"
+    DEFAULT_MODEL: ClassVar[str] = DEFAULT_MODEL
     DEFAULT_COMPRESSION: ClassVar[bool] = True
     DEFAULT_DATA_MODE: ClassVar[DataMode] = DataMode.BIN
+    DEPRECATED_FIELDS: ClassVar[Set[str]] = {"assistant_id"}
 
     # NOTE(justin): This class functions as a singleton. Example usage anywhere:
     # settings = Settings() # type: ignore (dismiss warnings related to required arguments)
@@ -27,7 +30,15 @@ class Settings(metaclass = Singleton):
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "Settings":
+        # version 0.3.0 backwards compatability (adding multi-assistant support)
+        assistant_id = data.pop("assistant_id", None)
+        assistants = data.pop("assistants", {})
+        if assistant_id:
+            assistants[DEFAULT_ASSISTANTS[0].name] = assistant_id
+
         return Settings(
+            assistant_id = assistant_id,
+            assistants = assistants,
             model = data.pop("model", Settings.DEFAULT_MODEL),
             compression = data.pop("compression", Settings.DEFAULT_COMPRESSION),
             data_mode = DataMode(data.pop("data_mode", Settings.DEFAULT_DATA_MODE.value)),
@@ -35,7 +46,7 @@ class Settings(metaclass = Singleton):
         )
 
     def to_dict(self) -> Dict[str, Any]:
-        data = asdict(self)
+        data = utils.asdict_exclude(self, Settings.DEPRECATED_FIELDS)
         data["data_mode"] = self.data_mode.value
         return data
 
@@ -50,6 +61,16 @@ def init_settings() -> Settings:
         settings = prompt_for_settings()
         save = True
 
+    # automatically create default assistants added in future versions
+    for da in DEFAULT_ASSISTANTS:
+        if not da.name in "assistant":
+            if not hasattr(ai, "Client"):
+                ai.init(settings.api_key, verify = False)
+            assistant = ai.create_assistant(**asdict(da))
+            assert assistant.name # NOTE(justin): OpenAI Assistant type has this field as optional, but we require it for identification
+            settings.assistants[assistant.name] = assistant.id
+            save = True
+                
     if save:
         s_str = json.dumps(settings.to_dict(), indent = 4)
         FileUtils.write_str(settings_file, s_str)
@@ -70,7 +91,6 @@ def prompt_for_settings() -> Settings:
     while True:
         try:
             model = prompt(f"Enter the OpenAI model to use [Default: {Settings.DEFAULT_MODEL}]: ", completer = model_completer)
-            assistant = ai.create_assistant(model or Settings.DEFAULT_MODEL)
             break
         except BadRequestError as ex:
             if ex.code == "model_not_found":
@@ -78,13 +98,19 @@ def prompt_for_settings() -> Settings:
                 continue
             raise ex
 
+    assistants: List[Assistant] = []
+    for da in DEFAULT_ASSISTANTS:
+        assistant = ai.create_assistant(**asdict(da))
+        assistants.append(assistant) # type: ignore[reportUnboundVariable]
+
     # TODO(justin): maybe add ability to select data mode. possibly a cli option to re-configure settings too.
     # it's not too important, for now it'll default to binary and can be changed manually.
 
     return Settings(
         api_key = api_key, 
         model = model, 
-        assistant_id = assistant.id,
+        assistant_id = "", # NOTE(justin): deprecated in version 0.3.0
+        assistants = {a.name: a.id for a in assistants}, # type: ignore[reportUnboundVariable]
         data_mode = Settings.DEFAULT_DATA_MODE,
         compression = Settings.DEFAULT_COMPRESSION
     )
