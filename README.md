@@ -29,15 +29,14 @@ The following inputs are supported:
 
 - YouTube video URLs. (Transcript is extracted and used as text)
 - Local files. (Any type of content, file will be uploaded byte for byte)
+- Local directories. (Includes files in nested directories)
 - Other URLs, depending on the response content. (Text content, PDF files, and HTML are all supported)
 
 Support for a wider variety of input may be added in the future.
 
 ### Potential improvements:
 
-- Directory support (Enter a local directory path, contents are uploaded recursively)
 - Archive support (Both URLs and local files - automatically extract/upload contents of `.zip`/`.tar.gz` files)
-- VectorStore caching (already supported for youtube videos, the goal is to implement this for all inputs)
 - Multiple "assistants" with more intricate instructions, which would be selected based on the type of information being analyzed.
   - A custom assistant can already be used by manually changing the "assistant_id" property in settings file.
 - User friendly command line interface.
