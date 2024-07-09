@@ -5,6 +5,8 @@ from typing import Any, Union, Tuple, Set, Dict
 from pathlib import Path
 from .errors import ValueTypeError
 from packaging.version import Version
+from prompt_toolkit.validation import Validator, ValidationError
+from prompt_toolkit.document import Document
 
 package_name = lambda: __name__.split('.')[0]
 
@@ -86,3 +88,21 @@ def get_version(pkg_name: str = "") -> Version:
     version_str = metadata.version(pkg_name)
     return Version(version_str)
 
+class NumericChoiceValidator(Validator):
+
+    def __init__(self, valid_choices):
+        self.valid_choices = valid_choices
+
+    def validate(self, document: Document):
+        try:
+            value = int(document.text)
+            if value not in self.valid_choices:
+                raise ValidationError(
+                    message="That number isn't a valid choice.",
+                    cursor_position=len(document.text)
+                )
+        except ValueError:
+            raise ValidationError(
+                message="Input the number corresponding with your choice.",
+                cursor_position=len(document.text)
+            )
