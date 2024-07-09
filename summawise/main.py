@@ -1,9 +1,10 @@
 import validators, requests, time, sys
 from openai.types.beta import VectorStore 
 from prompt_toolkit import prompt
-from typing import Tuple, Optional
+from typing import Tuple, Dict, Optional
 from pathlib import Path
 from . import ai
+from .utils import NumericChoiceValidator, delete_lines
 from .settings import init_settings
 from .web import process_url
 from .files.processing import process_file, process_dir
@@ -36,8 +37,6 @@ def scan(user_input: Tuple[str, ...]):
         else:
             input_str = prompt("Enter a URL or local file path: ").strip('\'"')
 
-        print(input_str)
-
         # invoke process_input func to handle processing of data and retrieve VectorStore ID
         try:
             vector_store_id = process_input(input_str)
@@ -62,6 +61,26 @@ def scan(user_input: Tuple[str, ...]):
     except AssertionError as ex:
         print(f"An unknown occurred while processing input: invalid VectorStore ID. ({ex})")
         return
+
+    if len(settings.assistants) > 1:
+        # list assistant choices, map numeric index to name
+        assistant_choices: Dict[int, str] = {}
+        for idx, name in enumerate(settings.assistants.keys(), start = 1):
+            assistant_choices[idx] = name
+            print(f"{idx}) {name}")
+
+        # prompt user to select assistant 
+        assistant_name, assistant_id = "", ""
+        while not (assistant_id and assistant_name):
+            choice = int(prompt("Select an assistant: ", validator = NumericChoiceValidator(assistant_choices.keys())))
+            assistant_name = assistant_choices[choice]
+            assistant_id = settings.assistants[assistant_name]
+
+        # remove assistant selection menu, output valid choice
+        delete_lines(len(assistant_choices) + 2)
+        print(f"Using selected assistant: {assistant_name}")
+    else:
+        assistant_id = next(iter(settings.assistants.values()))
 
     # verify vector store validity w/ openai, output some generic info
     processing: bool = True
@@ -99,10 +118,10 @@ def scan(user_input: Tuple[str, ...]):
     # create thread for this conversation
     try:
         # TODO(justin): change message used to initialize thread based on type of input data/source
-        thread = ai.create_thread([vector_store_id], "Please summarize the transcript.")
+        thread = ai.create_thread([vector_store_id])
         print(f"Thread created with ID: {thread.id}")
         print("Generating summary...")
-        ai.get_thread_response(thread.id, settings.assistant_id, "Please summarize the transcript.", auto_print = True)
+        ai.get_thread_response(thread.id, assistant_id, "Please summarize the transcript.", auto_print = True)
     except Exception as e:
         print(f"Error generating summary: {e}")
         return
@@ -112,7 +131,7 @@ def scan(user_input: Tuple[str, ...]):
         input_str = prompt("\nyou > ")
         conditional_exit(input_str)
         try:
-            ai.get_thread_response(thread.id, settings.assistant_id, input_str, auto_print = True)
+            ai.get_thread_response(thread.id, assistant_id, input_str, auto_print = True)
         except Exception as e:
             print(f"Error in chat: {e}")
 
