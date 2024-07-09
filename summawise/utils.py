@@ -7,6 +7,7 @@ from packaging.version import Version
 from .errors import ValueTypeError
 from prompt_toolkit.validation import Validator, ValidationError
 from prompt_toolkit.document import Document
+from packaging.version import Version
 
 package_name = lambda: __name__.split('.')[0]
 
