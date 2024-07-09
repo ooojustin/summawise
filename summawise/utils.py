@@ -1,8 +1,12 @@
 import tempfile
+from importlib import metadata
 from dataclasses import is_dataclass, fields
 from typing import Any, Union, Tuple, Set, Dict
 from pathlib import Path
 from .errors import ValueTypeError
+from packaging.version import Version
+
+package_name = lambda: __name__.split('.')[0]
 
 class Singleton(type):
     _instances = {}
@@ -65,3 +69,20 @@ def asdict_exclude(obj: Any, exclude: Set[str]) -> Dict[str, Any]:
         if f.name not in exclude:
             result[f.name] = getattr(obj, f.name)
     return result
+
+def get_version(pkg_name: str = "") -> Version:
+    """
+    Retrieves the version of a specified package.
+    By default, it will return the running packages (summawise) version. 
+
+    Args:
+        pkg_name (str): The name of the package to retrieve the version for. If not provided, the default package name will be used.
+
+    Returns:
+        Version: An object representing the version of the specified package.
+    """
+    if not pkg_name: 
+        pkg_name = package_name()
+    version_str = metadata.version(pkg_name)
+    return Version(version_str)
+

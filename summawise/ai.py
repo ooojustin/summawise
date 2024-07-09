@@ -1,5 +1,5 @@
 from typing_extensions import override
-from typing import List, NamedTuple
+from typing import List, Optional, NamedTuple
 from pathlib import Path
 from openai import OpenAI, AssistantEventHandler
 from openai.types.file_object import FileObject
@@ -8,6 +8,7 @@ from openai.types.beta.threads import TextContentBlock, TextDelta, Message, Text
 from openai.types.beta.threads.runs import ToolCall
 from .files import utils as FileUtils
 from .files.cache import FileCacheObj
+from . import utils
 
 Client: OpenAI
 FileCache: FileCacheObj
@@ -106,13 +107,33 @@ def create_vector_store(name: str, file_paths: List[Path]) -> VectorStore:
     vector_store = Client.beta.vector_stores.create(name = name, file_ids = file_ids)
     return vector_store
 
-def create_assistant(model: str) -> Assistant:
-    # TODO(justin): more generic instructions, since this program is for more than just video transcripts
+def create_assistant(
+    model: str,
+    name: str, 
+    instructions: str, 
+    file_search: bool = False,
+    interpret_code: bool = False,
+    respond_with_json: bool = False,
+    description: Optional[str] = None,
+    temperature: Optional[float] = None,
+    top_p: Optional[float] = None
+) -> Assistant:
+    tools = []
+    if file_search:
+        tools.append({"type": "file_search"})
+    if interpret_code:
+        tools.append({"type": "code_interpreter"})
+    response_format = { "type": "json_object" } if respond_with_json else "auto"
     assistant = Client.beta.assistants.create(
-        name = "Transcript Analysis Assistant",
-        instructions = "You are an assistant that summarizes video transcripts and answers questions about them.",
         model = model,
-        tools = [{"type": "file_search"}],
+        name = name,
+        instructions = instructions,
+        tools = tools,
+        description = description,
+        metadata = { "created_by": utils.package_name() },
+        top_p = top_p,
+        temperature = temperature,
+        response_format = response_format, # type: ignore
     )
     return assistant
 
