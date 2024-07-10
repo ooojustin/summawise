@@ -1,5 +1,5 @@
 import click, sys
-from .commands.scan import scan
+from .commands import scan, assistant
 
 CONTEXT_SETTINGS = {"max_content_width": sys.maxsize}
 
@@ -10,6 +10,7 @@ def cli():
 
 def register_commands():
     cli.add_command(scan)
+    cli.add_command(assistant)
 
 def main():
     register_commands()
