@@ -12,12 +12,7 @@ from ..errors import NotSupportedError
 from ..utils import NumericChoiceValidator, delete_lines
 from ..data import DataUnit
 
-@click.group()
-def scanner():
-    """A tool to use AI to analyze and interact with vectorized data from custom sources of information."""
-    pass
-
-@scanner.command()
+@click.command()
 @click.argument("user_input", nargs = -1)
 def scan(user_input: Tuple[str, ...]):
     """Scan and process the given input (URL or file path), and offer an interactive prompt to inquire about the vectorized data."""
