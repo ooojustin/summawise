@@ -1,7 +1,12 @@
-import tempfile
-from typing import Any, Union, Tuple
+import tempfile, sys
+from importlib import metadata
+from dataclasses import is_dataclass, fields
+from typing import Any, Union, Tuple, Set, Dict
 from pathlib import Path
+from packaging.version import Version
 from .errors import ValueTypeError
+
+package_name = lambda: __name__.split('.')[0]
 
 class Singleton(type):
     _instances = {}
@@ -41,3 +46,51 @@ def assert_type(value: Any, type_or_types: Union[type, Tuple[type, ...]]) -> Non
         raise TypeError("Function 'assert_type' parameter 'type_or_types' must be a type, or a tuple of types.")
     elif not isinstance(value, type_or_types):
         raise ValueTypeError(value, type_or_types)
+
+def asdict_exclude(obj: Any, exclude: Set[str]) -> Dict[str, Any]:
+    """
+    Convert a dataclass object to a dictionary, excluding specified fields.
+    Parameters:
+        obj (Any): The dataclass object to convert to a dictionary.
+        exclude (Set[str]): A set of field names to exclude from the resulting dictionary.
+    Returns:
+        Dict[str, Any]: A dictionary representation of the dataclass object, excluding the specified fields.
+    Raises:
+        TypeError: If the input object is not a dataclass.
+    """
+    if not is_dataclass(obj):
+        raise TypeError("Object must be a dataclass.")
+
+    result = {}
+    for f in fields(obj):
+        if f.name not in exclude:
+            result[f.name] = getattr(obj, f.name)
+    return result
+
+def get_version(pkg_name: str = "") -> Version:
+    """
+    Retrieves the version of a specified package.
+    By default, it will return the running packages (summawise) version. 
+    Args:
+        pkg_name (str): The name of the package to retrieve the version for. If not provided, the default package name will be used.
+    Returns:
+        Version: An object representing the version of the specified package.
+    """
+    if not pkg_name: 
+        pkg_name = package_name()
+    version_str = metadata.version(pkg_name)
+    return Version(version_str)
+
+def delete_lines(count: int = 1):
+    """
+    Deletes the specified number of lines from the terminal output.
+    VT100 docs: https://vt100.net/docs/vt100-ug/chapter3.html
+    Parameters:
+        count (int): The number of lines to delete. Default is 1.
+    """
+    CURSOR_UP_ONE = '\x1b[1A'
+    ERASE_LINE = '\x1b[2K'
+    for _ in range(count):
+        sys.stdout.write(CURSOR_UP_ONE)
+        sys.stdout.write(ERASE_LINE)
+    sys.stdout.flush()
