@@ -5,6 +5,8 @@ from typing import Any, Union, Tuple, Set, Dict
 from pathlib import Path
 from packaging.version import Version
 from .errors import ValueTypeError
+from prompt_toolkit.validation import Validator, ValidationError
+from prompt_toolkit.document import Document
 
 package_name = lambda: __name__.split('.')[0]
 
@@ -14,6 +16,25 @@ class Singleton(type):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
+
+class NumericChoiceValidator(Validator):
+
+    def __init__(self, valid_choices):
+        self.valid_choices = valid_choices
+
+    def validate(self, document: Document):
+        try:
+            value = int(document.text)
+            if value not in self.valid_choices:
+                raise ValidationError(
+                    message="That number isn't a valid choice.",
+                    cursor_position=len(document.text)
+                )
+        except ValueError:
+            raise ValidationError(
+                message="Input the number corresponding with your choice.",
+                cursor_position=len(document.text)
+            )
 
 def get_summawise_dir() -> Path:
     temp_dir = Path(tempfile.gettempdir())
