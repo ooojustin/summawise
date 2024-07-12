@@ -2,7 +2,7 @@ import tempfile, sys
 from datetime import datetime
 from dataclasses import is_dataclass, fields
 from importlib import metadata
-from typing import Any, Callable, Union, Tuple, Set, Dict
+from typing import Any, Optional, Callable, Union, Tuple, Set, Dict
 from pathlib import Path
 from packaging.version import Version
 from .errors import ValueTypeError
@@ -149,3 +149,9 @@ def convert_datetimes(
         else:
             output[key] = value
     return output
+
+def try_parse_int(value: str, default: Optional[int] = None) -> Optional[int]:
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default

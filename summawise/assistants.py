@@ -1,5 +1,5 @@
 import warnings
-from typing import List, Optional, Iterable, Callable, TypeVar
+from typing import List, Optional, Iterable, Callable, TypeVar, Tuple
 from datetime import datetime, timezone
 from dataclasses import dataclass, asdict, field
 from . import utils
@@ -57,6 +57,8 @@ class AssistantList(List[Assistant]):
         reverse: bool = False
     ):
         if not sort:
+            # sort by "created_at" by default (consistency allows use of index as identifier)
+            assistants = sorted(assistants, key = lambda a: a.created_at) # type: ignore
             super().__init__(assistants)
             return
 
@@ -85,6 +87,12 @@ class AssistantList(List[Assistant]):
         if len(assistants) > 1:
             raise MultipleAssistantsFoundError("name", name)
         return assistants[0]
+
+    def get_by_id(self, id: str) -> Tuple[Optional[Assistant], int]:
+        for idx, assistant in enumerate(self):
+            if assistant.id == id:
+                return assistant, idx
+        return None, -1
 
 TranscriptAnalyzer: Assistant = Assistant(
     name = "Transcript Analysis Assistant",

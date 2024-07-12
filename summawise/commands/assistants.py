@@ -1,6 +1,6 @@
 import click
 from typing import Optional
-from .. import ai
+from .. import ai, utils
 from ..assistants import Assistant
 from ..settings import Settings
 
@@ -69,6 +69,33 @@ def create(
 @assistant.command()
 @click.argument("assistant_id", type = str)
 def delete(assistant_id: str):
-    """Delete an assistant."""
-    # TODO(justin): implement the logic to delete an assistant
-    print(f"summawise 'assistant delete' not yet implemented. (id: {assistant_id})")
+    """
+    Delete an assistant.\n
+    Provided ID can be the assistant name, id, or number from 'list'.
+    """
+    settings = Settings() # type: ignore
+    idx = -1
+
+    if assistant_id.startswith("asst_"):
+        _, idx = settings.assistants.get_by_id(assistant_id)
+        if idx == -1:
+            print("Failed to identify assistant to delete.")
+            return
+
+    if idx == -1:
+        assistant = settings.assistants.get_by_name(assistant_id)
+        if assistant:
+            _, idx = settings.assistants.get_by_id(assistant.id)
+
+    if idx == -1:
+        idx = utils.try_parse_int(assistant_id)
+        idx = -1 if idx is None else idx - 1
+
+    if idx < 0 or idx > len(settings.assistants) - 1:
+        print("Failed to identify assistant to delete.")
+        return
+
+    assistant = settings.assistants[idx]
+    del settings.assistants[idx]
+    settings.save()
+    print(f"Deleted assistant successfully: {assistant.name}")
