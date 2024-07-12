@@ -4,10 +4,10 @@ from typing import Tuple, Dict, Optional
 from prompt_toolkit import prompt
 from pathlib import Path
 from .. import ai
+from ..settings import Settings
 from ..web import process_url
 from ..files.processing import process_file, process_dir
 from ..files import cache as FileCache
-from ..settings import init_settings
 from ..errors import NotSupportedError
 from ..utils import NumericChoiceValidator, delete_lines
 from ..data import DataUnit
@@ -16,7 +16,7 @@ from ..data import DataUnit
 @click.argument("user_input", nargs = -1)
 def scan(user_input: Tuple[str, ...]):
     """Scan and process the given input (URL or file path), and offer an interactive prompt to inquire about the vectorized data."""
-    settings = init_settings()
+    settings = Settings() # type: ignore
     FileCache.init()
 
     if not hasattr(ai, "Client"):

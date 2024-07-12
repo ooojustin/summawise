@@ -63,7 +63,7 @@ def init_settings() -> Settings:
 
     # automatically create default assistants added in future versions
     for da in DEFAULT_ASSISTANTS:
-        if not da.name in "assistant":
+        if not da.name in settings.assistants:
             if not hasattr(ai, "Client"):
                 ai.init(settings.api_key, verify = False)
             assistant = ai.create_assistant(**asdict(da))
