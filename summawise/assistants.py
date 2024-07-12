@@ -47,7 +47,7 @@ class AssistantList(List[Assistant]):
         self, 
         assistants: Iterable[Assistant] = [], 
         sort: bool = False,
-        key: Optional[Callable[[Assistant], T]] = None, 
+        key: Optional[Callable[[Assistant], T]] = None,
         reverse: bool = False
     ):
         if not sort:
@@ -62,6 +62,11 @@ class AssistantList(List[Assistant]):
 
     def to_dict_list(self) -> List[dict]:
         return [a.to_dict() for a in self]
+
+    @staticmethod
+    def from_dict_list(objects: List[dict], **kwargs) -> "AssistantList":
+        assistants = [Assistant(**obj) for obj in objects]
+        return AssistantList(assistants, **kwargs)
 
     def list_by_name(self, name: str) -> List[Assistant]:
         return [assistant for assistant in self if assistant.name == name]

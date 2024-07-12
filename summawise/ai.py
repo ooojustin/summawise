@@ -140,6 +140,9 @@ def create_assistant(
     )
     return assistant
 
+def get_assistant(id: str) -> Assistant:
+    return Client.beta.assistants.retrieve(id)
+
 def create_thread(vector_store_ids: List[str]) -> Thread:
     thread = Client.beta.threads.create(
         tool_resources = {"file_search": {"vector_store_ids": vector_store_ids}}

@@ -23,6 +23,7 @@ class Settings(metaclass = Singleton):
     DEFAULT_COMPRESSION: ClassVar[bool] = True
     DEFAULT_DATA_MODE: ClassVar[DataMode] = DataMode.BIN
     DEPRECATED_FIELDS: ClassVar[Set[str]] = {"assistant_id"}
+    FORCE_SAVE: ClassVar[bool] = False
 
     # NOTE(justin): This class functions as a singleton. Example usage anywhere:
     # settings = Settings() # type: ignore (dismiss warnings related to required arguments)
@@ -30,31 +31,32 @@ class Settings(metaclass = Singleton):
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "Settings":
-        assistants = data.pop("assistants", [])
-
-        # turn assistant dicts into object oriented representations
-        if len(assistants):
-            assistants = [Assistant(**obj) for obj in assistants]
-
-        # version 0.3.0 backwards compatability (adding multi-assistant support)
         assistant_id = data.pop("assistant_id", None)
-        if assistant_id:
-            default_assistant = copy.copy(DEFAULT_ASSISTANTS[0])
-            default_assistant.id = assistant_id
-            assistants.append(default_assistant)
+        assistants = data.pop("assistants", [])
+        assistants = AssistantList.from_dict_list(assistants)
 
-        return Settings(
+        settings = Settings(
             assistant_id = assistant_id,
-            assistants = AssistantList(assistants),
+            assistants = assistants,
             model = data.pop("model", Settings.DEFAULT_MODEL),
             compression = data.pop("compression", Settings.DEFAULT_COMPRESSION),
             data_mode = DataMode(data.pop("data_mode", Settings.DEFAULT_DATA_MODE.value)),
             **data
         )
 
+        # version 0.3.0 backwards compatability (adding multi-assistant support)
+        if settings.assistant_id:
+            ai.init(settings.api_key, verify = False)
+            api_assistant = ai.get_assistant(assistant_id)
+            default_assistant = copy.copy(DEFAULT_ASSISTANTS[0])
+            default_assistant.apply_api_obj(api_assistant)
+            assistants.append(default_assistant)
+            Settings.FORCE_SAVE = True
+
+        return settings
+
     def to_dict(self) -> Dict[str, Any]:
         data = utils.asdict_exclude(self, Settings.DEPRECATED_FIELDS)
-        # data["assistants"] = {a.name: a.to_dict() for a in self.assistants.values()}
         data["assistants"] = self.assistants.to_dict_list()
         data["data_mode"] = self.data_mode.value
         return data
@@ -82,8 +84,8 @@ def init_settings() -> Settings:
             assistant.apply_api_obj(api_assistant)
             settings.assistants.append(assistant)
             save = True
-                
-    if save:
+    
+    if save or Settings.FORCE_SAVE:
         s_str = json.dumps(settings.to_dict(), indent = 4)
         FileUtils.write_str(settings_file, s_str)
 
