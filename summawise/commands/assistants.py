@@ -11,10 +11,8 @@ def assistant():
 def list():
     """List your available assistants."""
     settings = Settings() # type: ignore
-    assistant_choices: Dict[int, str] = {}
-    for idx, name in enumerate(settings.assistants.keys(), start = 1):
-        assistant_choices[idx] = name
-        print(f"{idx}) {name}")
+    for idx, assistant in enumerate(settings.assistants, start = 1):
+        print(f"{idx}) {assistant.name}")
 
 @assistant.command()
 @click.argument("name", type = str)

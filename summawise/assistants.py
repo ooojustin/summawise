@@ -1,6 +1,7 @@
-from typing import List, Set, Optional
+from typing import List, Optional
 from dataclasses import dataclass, asdict
 from . import utils
+from .errors import MultipleAssistantsFoundException
 
 DEFAULT_MODEL = "gpt-3.5-turbo"
 
@@ -22,6 +23,22 @@ class Assistant:
     
     def to_create_params(self) -> dict:
         return utils.asdict_exclude(self, {"id"})
+
+class AssistantList(List[Assistant]):
+
+    def to_dict_list(self) -> List[dict]:
+        return [a.to_dict() for a in self]
+
+    def list_by_name(self, name: str) -> List[Assistant]:
+        return [assistant for assistant in self if assistant.name == name]
+
+    def get_by_name(self, name: str, default: Optional[Assistant] = None) -> Optional[Assistant]:
+        assistants = self.list_by_name(name)
+        if len(assistants) == 0:
+            return default
+        if len(assistants) > 1:
+            raise MultipleAssistantsFoundException("name", name)
+        return assistants[0]
 
 TranscriptAnalyzer: Assistant = Assistant(
     name = "Transcript Analysis Assistant",

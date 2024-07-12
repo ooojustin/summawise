@@ -8,13 +8,13 @@ from . import utils, ai
 from .utils import Singleton
 from .data import DataMode
 from .files import utils as FileUtils
-from .assistants import DEFAULT_ASSISTANTS, DEFAULT_MODEL, Assistant
+from .assistants import DEFAULT_ASSISTANTS, DEFAULT_MODEL, Assistant, AssistantList
     
 @dataclass
 class Settings(metaclass = Singleton):
     api_key: str
     assistant_id: str = field(repr = False) # NOTE(justin): deprecated in version 0.3.0
-    assistants: Dict[str, Assistant]
+    assistants: AssistantList
     model: str
     compression: bool
     data_mode: DataMode
@@ -30,22 +30,23 @@ class Settings(metaclass = Singleton):
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "Settings":
-        assistants = data.pop("assistants", {})
+        assistants = data.pop("assistants", [])
 
         # turn assistant dicts into object oriented representations
-        for name, obj in assistants.items():
-            assistants[name] = Assistant(**obj)
+        if len(assistants):
+            assistants = [Assistant(**obj) for obj in assistants]
 
         # version 0.3.0 backwards compatability (adding multi-assistant support)
         assistant_id = data.pop("assistant_id", None)
         if assistant_id:
             default_assistant = copy.copy(DEFAULT_ASSISTANTS[0])
             default_assistant.id = assistant_id
-            assistants[default_assistant.name] = default_assistant
+            # assistants[default_assistant.name] = default_assistant
+            assistants.append(default_assistant)
 
         return Settings(
             assistant_id = assistant_id,
-            assistants = assistants,
+            assistants = AssistantList(assistants),
             model = data.pop("model", Settings.DEFAULT_MODEL),
             compression = data.pop("compression", Settings.DEFAULT_COMPRESSION),
             data_mode = DataMode(data.pop("data_mode", Settings.DEFAULT_DATA_MODE.value)),
@@ -54,7 +55,8 @@ class Settings(metaclass = Singleton):
 
     def to_dict(self) -> Dict[str, Any]:
         data = utils.asdict_exclude(self, Settings.DEPRECATED_FIELDS)
-        data["assistants"] = {a.name: a.to_dict() for a in self.assistants.values()}
+        # data["assistants"] = {a.name: a.to_dict() for a in self.assistants.values()}
+        data["assistants"] = self.assistants.to_dict_list()
         data["data_mode"] = self.data_mode.value
         return data
 
@@ -71,14 +73,14 @@ def init_settings() -> Settings:
 
     # automatically create default assistants added in future versions
     for da in DEFAULT_ASSISTANTS:
-        if not da.name in settings.assistants:
+        if not settings.assistants.get_by_name(da.name):
             if not hasattr(ai, "Client"):
                 ai.init(settings.api_key, verify = False)
             da = copy.copy(da)
             assistant = ai.create_assistant(**da.to_create_params())
             assert assistant.name # NOTE(justin): OpenAI Assistant type has this field as optional, but we require it for identification
             da.id = assistant.id
-            settings.assistants[assistant.name] = da
+            settings.assistants.append(da)
             save = True
                 
     if save:
@@ -108,12 +110,12 @@ def prompt_for_settings() -> Settings:
                 continue
             raise ex
 
-    assistants: Dict[str, Assistant] = {}
+    assistants: AssistantList = AssistantList()
     for da in DEFAULT_ASSISTANTS:
         da = copy.copy(da)
         assistant = ai.create_assistant(**da.to_create_params())
         da.id = assistant.id
-        assistants[da.name] = da
+        assistants.append(da)
         # assistants.append(assistant) # type: ignore[reportUnboundVariable]
 
     # TODO(justin): maybe add ability to select data mode. possibly a cli option to re-configure settings too.

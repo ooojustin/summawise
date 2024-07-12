@@ -29,3 +29,7 @@ class ValueTypeError(Exception):
 
         msg += f"but instead received value of type '{type(value).__name__}': {value}"
         super().__init__(msg)
+
+class MultipleAssistantsFoundException(Exception):
+    def __init__(self, condition: str, value: str):
+        super().__init__(f"Multiple assistants found. (Condition: '{condition}', Value: '{value}')")
