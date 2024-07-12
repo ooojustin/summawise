@@ -41,7 +41,6 @@ class Settings(metaclass = Singleton):
         if assistant_id:
             default_assistant = copy.copy(DEFAULT_ASSISTANTS[0])
             default_assistant.id = assistant_id
-            # assistants[default_assistant.name] = default_assistant
             assistants.append(default_assistant)
 
         return Settings(
@@ -116,7 +115,6 @@ def prompt_for_settings() -> Settings:
         assistant = ai.create_assistant(**da.to_create_params())
         da.id = assistant.id
         assistants.append(da)
-        # assistants.append(assistant) # type: ignore[reportUnboundVariable]
 
     # TODO(justin): maybe add ability to select data mode. possibly a cli option to re-configure settings too.
     # it's not too important, for now it'll default to binary and can be changed manually.
