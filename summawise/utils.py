@@ -1,15 +1,11 @@
-import tempfile, sys
-from importlib import metadata
-from dataclasses import is_dataclass, fields
-from typing import Any, Union, Tuple, Set, Dict
+import tempfile
+from typing import Any, Union, Tuple
 from pathlib import Path
 from packaging.version import Version
 from .errors import ValueTypeError
-from prompt_toolkit.validation import Validator, ValidationError
-from prompt_toolkit.document import Document
 from packaging.version import Version
-from prompt_toolkit.validation import Validator, ValidationError
 from prompt_toolkit.document import Document
+from prompt_toolkit.validation import Validator, ValidationError
 
 package_name = lambda: __name__.split('.')[0]
 
