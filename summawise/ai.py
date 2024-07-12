@@ -56,10 +56,13 @@ def init(api_key: str, verify: bool = True):
     """
     if not api_key or not isinstance(api_key, str):
         raise ValueError("API key must be a non-empty string.")
-    
+
     global Client
-    Client = OpenAI(api_key = api_key)
+    if "Client" in globals():
+        if Client.api_key == api_key:
+            return
     
+    Client = OpenAI(api_key = api_key)
     if verify:
         Client.models.list()
 

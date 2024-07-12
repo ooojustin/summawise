@@ -74,7 +74,7 @@ def scan(user_input: Tuple[str, ...]):
         delete_lines(len(assistant_choices) + 2)
         print(f"Using selected assistant: {assistant.name}")
     else:
-        assistant_id = next(iter(settings.assistants.values()))
+        assistant_id = settings.assistants[0].id
 
     # verify vector store validity w/ openai, output some generic info
     processing: bool = True

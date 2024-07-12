@@ -121,6 +121,7 @@ def delete_lines(count: int = 1):
 
 converter_iso: Callable[[datetime], str] = lambda v: v.isoformat()
 converter_ts: Callable[[datetime], float] = lambda v: v.timestamp()
+converter_ts_int: Callable[[datetime], float] = lambda v: v.timestamp()
 
 def convert_datetimes(
     input_dict: Dict[str, Any], 
@@ -130,6 +131,7 @@ def convert_datetimes(
     Converts datetime objects in the input dictionary based on the converter func.
         - converter_iso: returns datetime.isoformat() [DEFAULT]
         - converter_ts: returns datetime.timestamp()
+        - converter_ts_int: returns int(datetime.timestamp())
     Recursively applies the conversion to nested dictionaries.
 
     Args:

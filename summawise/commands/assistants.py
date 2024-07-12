@@ -1,5 +1,4 @@
 import click
-from typing import Dict
 from ..settings import Settings
 
 @click.group()

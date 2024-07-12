@@ -10,21 +10,40 @@ class Assistant:
     name: str
     instructions: str
     model: str = DEFAULT_MODEL
+    id: str = ""
     file_search: bool = False
     interpret_code: bool = False
     respond_with_json: bool = False
     description: Optional[str] = None
     temperature: Optional[float] = None
     top_p: Optional[float] = None
-    id: str = ""
+    created_at: datetime = field(default_factory = utils.utc_now)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        obj = asdict(self)
+        return utils.convert_datetimes(obj, converter = utils.converter_ts_int)
     
     def to_create_params(self) -> dict:
-        return utils.asdict_exclude(self, {"id"})
+        return utils.asdict_exclude(self, {"id", "created_at"})
 
 class AssistantList(List[Assistant]):
+
+    def __init__(
+        self, 
+        assistants: Iterable[Assistant] = [], 
+        sort: bool = False,
+        key: Optional[Callable[[Assistant], T]] = None, 
+        reverse: bool = False
+    ):
+        if not sort:
+            super().__init__(assistants)
+            return
+
+        if not key or not callable(key):
+            raise MissingSortKeyError("Can't initialize 'AssistantList' in sorted order without callable key.")
+
+        sorted_assistants = sorted(assistants, key = key, reverse = reverse) # type: ignore
+        super().__init__(sorted_assistants)
 
     def to_dict_list(self) -> List[dict]:
         return [a.to_dict() for a in self]
@@ -37,7 +56,7 @@ class AssistantList(List[Assistant]):
         if len(assistants) == 0:
             return default
         if len(assistants) > 1:
-            raise MultipleAssistantsFoundException("name", name)
+            raise MultipleAssistantsFoundError("name", name)
         return assistants[0]
 
 TranscriptAnalyzer: Assistant = Assistant(
