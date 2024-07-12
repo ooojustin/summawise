@@ -1,5 +1,5 @@
 import tempfile
-from typing import Any, Union, Tuple
+from typing import Any, Union, Tuple, Set, Dict
 from pathlib import Path
 from packaging.version import Version
 from .errors import ValueTypeError
