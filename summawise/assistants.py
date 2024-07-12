@@ -1,3 +1,4 @@
+import warnings
 from typing import List, Optional, Iterable, Callable, TypeVar
 from datetime import datetime, timezone
 from dataclasses import dataclass, asdict, field
@@ -11,10 +12,10 @@ DEFAULT_MODEL = "gpt-3.5-turbo"
 
 @dataclass
 class Assistant:
-    name: str
-    instructions: str
-    model: str = DEFAULT_MODEL
     id: str = ""
+    name: str = ""
+    instructions: str = ""
+    model: str = DEFAULT_MODEL
     file_search: bool = False
     interpret_code: bool = False
     respond_with_json: bool = False
@@ -22,6 +23,11 @@ class Assistant:
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     created_at: datetime = field(default_factory = utils.utc_now)
+
+    def __post_init__(self):
+        missing_field_warning = lambda x: warnings.warn(f"'Assistant' object is missing expected field {x}.\nThis field should always be provided.", UserWarning)
+        if not self.name: missing_field_warning("name")
+        if not self.instructions: missing_field_warning("instructions")
 
     def to_dict(self) -> dict:
         obj = asdict(self)

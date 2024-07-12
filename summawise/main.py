@@ -1,6 +1,6 @@
 import click, sys
 from .commands import scan, assistant
-from .settings import init_settings
+from .settings import Settings
 
 CONTEXT_SETTINGS = {"max_content_width": sys.maxsize}
 
@@ -14,6 +14,6 @@ def register_commands():
     cli.add_command(assistant)
 
 def main():
-    init_settings()
+    Settings.init()
     register_commands()
     cli()
