@@ -74,11 +74,12 @@ class AssistantList(List[Assistant]):
         assistants = [Assistant(**obj) for obj in objects]
         return AssistantList(assistants, **kwargs)
 
-    def list_by_name(self, name: str) -> List[Assistant]:
-        return [assistant for assistant in self if assistant.name == name]
+    def list_by_name(self, name: str, case_sensitive: bool = False) -> List[Assistant]:
+        t = lambda s: s if case_sensitive else s.lower() # transform func
+        return [assistant for assistant in self if t(assistant.name) == t(name)]
 
-    def get_by_name(self, name: str, default: Optional[Assistant] = None) -> Optional[Assistant]:
-        assistants = self.list_by_name(name)
+    def get_by_name(self, name: str, default: Optional[Assistant] = None, case_sensitive: bool = False) -> Optional[Assistant]:
+        assistants = self.list_by_name(name, case_sensitive = case_sensitive)
         if len(assistants) == 0:
             return default
         if len(assistants) > 1:
