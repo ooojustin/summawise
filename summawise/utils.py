@@ -121,7 +121,7 @@ def delete_lines(count: int = 1):
 
 converter_iso: Callable[[datetime], str] = lambda v: v.isoformat()
 converter_ts: Callable[[datetime], float] = lambda v: v.timestamp()
-converter_ts_int: Callable[[datetime], float] = lambda v: v.timestamp()
+converter_ts_int: Callable[[datetime], float] = lambda v: int(v.timestamp())
 
 def convert_datetimes(
     input_dict: Dict[str, Any], 

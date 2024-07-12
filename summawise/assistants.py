@@ -1,7 +1,11 @@
-from typing import List, Optional
-from dataclasses import dataclass, asdict
+from typing import List, Optional, Iterable, Callable, TypeVar
+from datetime import datetime, timezone
+from dataclasses import dataclass, asdict, field
 from . import utils
-from .errors import MultipleAssistantsFoundException
+from .errors import MultipleAssistantsFoundError, MissingSortKeyError
+from openai.types.beta import Assistant as APIAssistant
+
+T = TypeVar('T')
 
 DEFAULT_MODEL = "gpt-3.5-turbo"
 
@@ -25,6 +29,17 @@ class Assistant:
     
     def to_create_params(self) -> dict:
         return utils.asdict_exclude(self, {"id", "created_at"})
+
+    def apply_api_obj(self, obj: APIAssistant):
+        """Use official library API object to apply/overwrite specific fields to this dataclass."""
+        self.id = obj.id
+        self.name = obj.name or ""
+        self.instructions = obj.instructions or ""
+        self.model = obj.model
+        self.description = obj.description
+        self.top_p = obj.top_p
+        self.temperature = obj.temperature
+        self.created_at = datetime.fromtimestamp(obj.created_at, timezone.utc)
 
 class AssistantList(List[Assistant]):
 

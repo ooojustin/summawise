@@ -19,9 +19,6 @@ def scan(user_input: Tuple[str, ...]):
     settings = Settings() # type: ignore
     FileCache.init()
 
-    if not hasattr(ai, "Client"):
-        ai.init(settings.api_key, verify=False)
-
     while True:
         # prompt user for data source if not provided as an argument
         if user_input:

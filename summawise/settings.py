@@ -1,6 +1,6 @@
 import json, os, copy
 from dataclasses import dataclass, fields, field
-from typing import Set, Union, Dict, Any, ClassVar
+from typing import Set, Optional, Dict, List, Any, ClassVar
 from openai import AuthenticationError, BadRequestError
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
@@ -69,17 +69,18 @@ def init_settings() -> Settings:
     else:
         settings = prompt_for_settings()
         save = True
+    
+    # initialize openai api
+    # TODO(justin): key verification after settings init in main
+    ai.init(settings.api_key, verify = False)
 
     # automatically create default assistants added in future versions
     for da in DEFAULT_ASSISTANTS:
         if not settings.assistants.get_by_name(da.name):
-            if not hasattr(ai, "Client"):
-                ai.init(settings.api_key, verify = False)
-            da = copy.copy(da)
-            assistant = ai.create_assistant(**da.to_create_params())
-            assert assistant.name # NOTE(justin): OpenAI Assistant type has this field as optional, but we require it for identification
-            da.id = assistant.id
-            settings.assistants.append(da)
+            assistant = copy.copy(da)
+            api_assistant = ai.create_assistant(**da.to_create_params())
+            assistant.apply_api_obj(api_assistant)
+            settings.assistants.append(assistant)
             save = True
                 
     if save:
@@ -109,12 +110,12 @@ def prompt_for_settings() -> Settings:
                 continue
             raise ex
 
-    assistants: AssistantList = AssistantList()
+    assistants: List[Assistant] = []
     for da in DEFAULT_ASSISTANTS:
-        da = copy.copy(da)
-        assistant = ai.create_assistant(**da.to_create_params())
-        da.id = assistant.id
-        assistants.append(da)
+        assistant = copy.copy(da)
+        api_assistant = ai.create_assistant(**da.to_create_params())
+        assistant.apply_api_obj(api_assistant)
+        assistants.append(assistant)
 
     # TODO(justin): maybe add ability to select data mode. possibly a cli option to re-configure settings too.
     # it's not too important, for now it'll default to binary and can be changed manually.
@@ -123,12 +124,12 @@ def prompt_for_settings() -> Settings:
         api_key = api_key, 
         model = model, 
         assistant_id = "", # NOTE(justin): deprecated in version 0.3.0
-        assistants = assistants,
+        assistants = AssistantList(assistants),
         data_mode = Settings.DEFAULT_DATA_MODE,
         compression = Settings.DEFAULT_COMPRESSION
     )
 
-def validate_api_key(api_key: str) -> Union[str, None]:
+def validate_api_key(api_key: str) -> Optional[str]:
     try:
         ai.init(api_key)
         return api_key
