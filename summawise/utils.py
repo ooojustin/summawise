@@ -20,15 +20,6 @@ class Singleton(type):
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
-class classproperty:
-    # Normal class properties were deprecated in Python 3.11
-    # This is a custom decorator to achieve effectively the same thing
-    # Source: https://stackoverflow.com/a/76301341
-    def __init__(self, func):
-        self.fget = func
-    def __get__(self, _, owner):
-        return self.fget(owner)
-
 class NumericChoiceValidator(Validator):
 
     def __init__(self, valid_choices):

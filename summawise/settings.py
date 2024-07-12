@@ -6,7 +6,7 @@ from pathlib import Path
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
 from . import utils, ai
-from .utils import Singleton, classproperty
+from .utils import Singleton
 from .data import DataMode
 from .files import utils as FileUtils
 from .assistants import DEFAULT_ASSISTANTS, DEFAULT_MODEL, Assistant, AssistantList
@@ -28,10 +28,6 @@ class Settings(metaclass = Singleton):
     # NOTE(justin): This class functions as a singleton. Example usage anywhere:
     # settings = Settings() # type: ignore (dismiss warnings related to required arguments)
     # print(settings.to_dict()) # contains info established in main()
-
-    @classproperty
-    def file(cls) -> Path:
-        return utils.get_summawise_dir() / "settings.json"
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> Tuple["Settings", bool]:
@@ -83,7 +79,7 @@ class Settings(metaclass = Singleton):
 
     @staticmethod
     def init() -> "Settings":
-        file = Settings.file
+        file = Settings.file()
         if file.exists():
             s_str = FileUtils.read_str(file)
             s_dict = json.loads(s_str)
@@ -114,8 +110,12 @@ class Settings(metaclass = Singleton):
     def save() -> "Settings":
         settings = Settings() # type: ignore
         s_str = json.dumps(settings.to_dict(), indent = 4)
-        FileUtils.write_str(Settings.file, s_str)
+        FileUtils.write_str(Settings.file(), s_str)
         return settings
+    
+    @staticmethod
+    def file() -> Path:
+        return utils.get_summawise_dir() / "settings.json"
 
     @staticmethod
     def prompt() -> "Settings":
@@ -131,6 +131,7 @@ class Settings(metaclass = Singleton):
         model_completer = WordCompleter(["gpt-4o", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"])
         while True:
             try:
+                # TODO(justin): add validator to this prompt
                 model = prompt(f"Enter the OpenAI model to use [Default: {Settings.DEFAULT_MODEL}]: ", completer = model_completer)
                 break
             except BadRequestError as ex:

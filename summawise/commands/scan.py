@@ -5,6 +5,7 @@ from prompt_toolkit import prompt
 from pathlib import Path
 from .. import ai
 from ..settings import Settings
+from ..assistants import Assistant
 from ..web import process_url
 from ..files.processing import process_file, process_dir
 from ..files import cache as FileCache
@@ -56,12 +57,12 @@ def scan(user_input: Tuple[str, ...]):
         assistant_choices: Dict[int, Assistant] = {}
         for idx, assistant in enumerate(settings.assistants, start = 1):
             assistant_choices[idx] = assistant
-            print(f"{idx}) {name}")
+            print(f"{idx}) {assistant.name}")
 
         # prompt user to select assistant 
         assistant_id = ""
         assistant: Optional[Assistant] = None
-        while not (assistant_id and assistant_name):
+        while not (assistant_id and assistant):
             choice = int(prompt("Select an assistant: ", validator = NumericChoiceValidator(assistant_choices.keys())))
             # assistant_id = settings.assistants[assistant_name]
             assistant = assistant_choices[choice]
