@@ -1,7 +1,8 @@
 import tempfile, sys
+from datetime import datetime
 from dataclasses import is_dataclass, fields
 from importlib import metadata
-from typing import Any, Union, Tuple, Set, Dict
+from typing import Any, Optional, Callable, Union, Tuple, Set, Dict
 from pathlib import Path
 from packaging.version import Version
 from .errors import ValueTypeError
@@ -10,6 +11,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.validation import Validator, ValidationError
 
 package_name = lambda: __name__.split('.')[0]
+utc_now = lambda: datetime.utcnow()
 
 class Singleton(type):
     _instances = {}
@@ -116,3 +118,40 @@ def delete_lines(count: int = 1):
         sys.stdout.write(CURSOR_UP_ONE)
         sys.stdout.write(ERASE_LINE)
     sys.stdout.flush()
+
+converter_iso: Callable[[datetime], str] = lambda v: v.isoformat()
+converter_ts: Callable[[datetime], float] = lambda v: v.timestamp()
+converter_ts_int: Callable[[datetime], float] = lambda v: int(v.timestamp())
+
+def convert_datetimes(
+    input_dict: Dict[str, Any], 
+    converter: Callable[[datetime], Any] = converter_iso
+) -> Dict[str, Any]:
+    """
+    Converts datetime objects in the input dictionary based on the converter func.
+        - converter_iso: returns datetime.isoformat() [DEFAULT]
+        - converter_ts: returns datetime.timestamp()
+        - converter_ts_int: returns int(datetime.timestamp())
+    Recursively applies the conversion to nested dictionaries.
+
+    Args:
+        input_dict (Dict[str, Any]): A dictionary where keys are strings and values can be of any type.
+
+    Returns:
+        Dict[str, Any]: A dict with the same keys as the input dictionary, but with datetime objects converted to ISO formatted strings.
+    """
+    output = {}
+    for key, value in input_dict.items():
+        if isinstance(value, datetime):
+            output[key] = converter(value)
+        elif isinstance(value, dict):
+            output[key] = convert_datetimes(value, converter)
+        else:
+            output[key] = value
+    return output
+
+def try_parse_int(value: str, default: Optional[int] = None) -> Optional[int]:
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default

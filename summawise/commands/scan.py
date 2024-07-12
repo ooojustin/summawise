@@ -4,10 +4,11 @@ from typing import Tuple, Dict, Optional
 from prompt_toolkit import prompt
 from pathlib import Path
 from .. import ai
+from ..settings import Settings
+from ..assistants import Assistant
 from ..web import process_url
 from ..files.processing import process_file, process_dir
 from ..files import cache as FileCache
-from ..settings import init_settings
 from ..errors import NotSupportedError
 from ..utils import NumericChoiceValidator, delete_lines
 from ..data import DataUnit
@@ -16,11 +17,8 @@ from ..data import DataUnit
 @click.argument("user_input", nargs = -1)
 def scan(user_input: Tuple[str, ...]):
     """Scan and process the given input (URL or file path), and offer an interactive prompt to inquire about the vectorized data."""
-    settings = init_settings()
+    settings = Settings() # type: ignore
     FileCache.init()
-
-    if not hasattr(ai, "Client"):
-        ai.init(settings.api_key, verify=False)
 
     while True:
         # prompt user for data source if not provided as an argument
@@ -56,23 +54,25 @@ def scan(user_input: Tuple[str, ...]):
 
     if len(settings.assistants) > 1:
         # list assistant choices, map numeric index to name
-        assistant_choices: Dict[int, str] = {}
-        for idx, name in enumerate(settings.assistants.keys(), start = 1):
-            assistant_choices[idx] = name
-            print(f"{idx}) {name}")
+        assistant_choices: Dict[int, Assistant] = {}
+        for idx, assistant in enumerate(settings.assistants, start = 1):
+            assistant_choices[idx] = assistant
+            print(f"{idx}) {assistant.name}")
 
         # prompt user to select assistant 
-        assistant_name, assistant_id = "", ""
-        while not (assistant_id and assistant_name):
+        assistant_id = ""
+        assistant: Optional[Assistant] = None
+        while not (assistant_id and assistant):
             choice = int(prompt("Select an assistant: ", validator = NumericChoiceValidator(assistant_choices.keys())))
-            assistant_name = assistant_choices[choice]
-            assistant_id = settings.assistants[assistant_name]
+            # assistant_id = settings.assistants[assistant_name]
+            assistant = assistant_choices[choice]
+            assistant_id = assistant.id
 
         # remove assistant selection menu, output valid choice
         delete_lines(len(assistant_choices) + 2)
-        print(f"Using selected assistant: {assistant_name}")
+        print(f"Using selected assistant: {assistant.name}")
     else:
-        assistant_id = next(iter(settings.assistants.values()))
+        assistant_id = settings.assistants[0].id
 
     # verify vector store validity w/ openai, output some generic info
     processing: bool = True
