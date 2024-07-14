@@ -13,10 +13,11 @@ class FileMetadata(Serializable):
     last_modified_at: float
     last_accessed_at: float
     vector_store_id: str = ""
+    file_id: str = ""
 
     @classmethod
     def create_from_path(cls, file_path: Path) -> "FileMetadata":
-        hash = FileUtils.calculate_hash(file_path)
+        hash = str(FileUtils.calculate_hash(file_path))
         stats = file_path.stat()
         sz_bytes = stats.st_size
         created_at = stats.st_ctime

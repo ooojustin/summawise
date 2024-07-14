@@ -1,6 +1,7 @@
 from typing_extensions import override
 from typing import List, Optional, NamedTuple
 from pathlib import Path
+from dataclasses import dataclass, field
 from openai import OpenAI, AssistantEventHandler
 from openai.types.file_object import FileObject
 from openai.types.beta import Thread, Assistant, VectorStore 
@@ -12,6 +13,19 @@ from . import utils
 
 Client: OpenAI
 FileCache: FileCacheObj
+
+@dataclass
+class Resources:
+    vector_store_ids: List[str] = field(default_factory = list)
+    file_ids: List[str] = field(default_factory = list)
+
+    @property
+    def vector_store_id(self):
+        if not len(self.vector_store_ids):
+            raise ValueError("Resources object has no vector store id.")
+        elif len(self.vector_store_ids) > 1:
+            raise ValueError("Resources object has more than 1 vector store id associated with it.")
+        return self.vector_store_ids[0]
 
 class EventHandler(AssistantEventHandler):
 
@@ -100,6 +114,9 @@ def get_file_infos(files: List[Path]) -> List[FileInfo]:
     return file_infos
 
 def create_vector_store(name: str, file_paths: List[Path]) -> VectorStore:
+def create_vector_store_from_file_ids(name: str, file_ids: List[str]) -> VectorStore:
+    return Client.beta.vector_stores.create(name = name, file_ids = file_ids)
+
     print(f"Creating vector store with {len(file_paths)} file(s).", end = " ")
     file_infos = get_file_infos(file_paths)
     file_ids = [info.file_id for info in file_infos]
