@@ -53,6 +53,7 @@ def scan(user_input: Tuple[str, ...]):
         print(f"An unknown occurred while processing input: invalid VectorStore ID. ({ex})")
         return
 
+    assistant: Assistant = settings.assistants[0]
     if len(settings.assistants) > 1:
         # list assistant choices, map numeric index to name
         assistant_choices: Dict[int, Assistant] = {}
@@ -61,19 +62,12 @@ def scan(user_input: Tuple[str, ...]):
             print(f"{idx}) {assistant.name}")
 
         # prompt user to select assistant 
-        assistant_id = ""
-        assistant: Optional[Assistant] = None
-        while not (assistant_id and assistant):
-            choice = int(prompt("Select an assistant: ", validator = NumericChoiceValidator(assistant_choices.keys())))
-            # assistant_id = settings.assistants[assistant_name]
-            assistant = assistant_choices[choice]
-            assistant_id = assistant.id
+        choice = int(prompt("Select an assistant: ", validator = NumericChoiceValidator(assistant_choices.keys())))
+        assistant = assistant_choices[choice]
 
         # remove assistant selection menu, output valid choice
         delete_lines(len(assistant_choices) + 2)
         print(f"Using selected assistant: {assistant.name}")
-    else:
-        assistant_id = settings.assistants[0].id
 
     # verify vector store validity w/ openai, output some generic info
     processing: bool = True
@@ -111,10 +105,14 @@ def scan(user_input: Tuple[str, ...]):
     # create thread for this conversation
     try:
         # TODO(justin): change message used to initialize thread based on type of input data/source
-        thread = ai.create_thread([vector_store_id])
+        thread = ai.create_thread(
+            resources,
+            file_search = assistant.file_search,
+            code_interpreter = assistant.interpret_code
+        )
         print(f"Thread created with ID: {thread.id}")
         print("Generating summary...")
-        ai.get_thread_response(thread.id, assistant_id, "Please summarize the transcript.", auto_print = True)
+        ai.get_thread_response(thread.id, assistant.id, "Please summarize the transcript.", auto_print = True)
     except Exception as e:
         print(f"Error generating summary: {e}")
         return
@@ -124,7 +122,7 @@ def scan(user_input: Tuple[str, ...]):
         input_str = prompt("\nyou > ")
         conditional_exit(input_str)
         try:
-            ai.get_thread_response(thread.id, assistant_id, input_str, auto_print = True)
+            ai.get_thread_response(thread.id, assistant.id, input_str, auto_print = True)
         except Exception as e:
             print(f"Error in chat: {e}")
 

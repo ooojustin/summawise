@@ -7,6 +7,7 @@ from openai.types.file_object import FileObject
 from openai.types.beta import Thread, Assistant, VectorStore 
 from openai.types.beta.threads import TextContentBlock, TextDelta, Message, Text
 from openai.types.beta.threads.runs import ToolCall
+from openai.types.beta.thread_create_params import ToolResources
 from .files import utils as FileUtils
 from .files.cache import FileCacheObj
 from . import utils
@@ -160,11 +161,31 @@ def create_assistant(
 def get_assistant(id: str) -> Assistant:
     return Client.beta.assistants.retrieve(id)
 
-def create_thread(vector_store_ids: List[str]) -> Thread:
-    thread = Client.beta.threads.create(
-        tool_resources = {"file_search": {"vector_store_ids": vector_store_ids}}
+def create_thread(resources: Resources, file_search: bool = False, code_interpreter: bool = False) -> Thread:
+    # https://platform.openai.com/docs/api-reference/threads/createThread#threads-createthread-tool_resources
+
+    # TODO(justin): find a clever way to determine which resources to use in the case where limits apply
+    # this may (temporarily, at least) involve letting the user select which files are most important to include
+    file_id_max_count = 20 # enforced by OpenAI
+    file_ids = resources.file_ids
+    if code_interpreter and len(file_ids) > file_id_max_count:
+        # example of trying to analyze summawise codebase in v0.4.0 dev,
+        # prior to applying the limit client side: https://pastebin.com/raw/rPFmju9D
+        file_ids = file_ids[:file_id_max_count]
+        print((
+            f"Note: OpenAI currently enforces a limit of {file_id_max_count} files when using the code interpreter tool.\n"
+            f"Using {len(file_ids)}/{len(resources.file_ids)} available file IDs."
+        ))
+
+    tool_resources = ToolResources(
+        file_search = {"vector_store_ids": resources.vector_store_ids}, 
+        code_interpreter = {"file_ids": file_ids}
     )
-    return thread
+    if not file_search:
+        del tool_resources["file_search"]
+    if not code_interpreter:
+        del tool_resources["code_interpreter"]
+    return Client.beta.threads.create(tool_resources = tool_resources)
 
 def get_thread_response(thread_id: str, assistant_id: str, prompt: str, auto_print: bool = False) -> str:
     Client.beta.threads.messages.create(thread_id = thread_id, content = prompt, role = "user")
