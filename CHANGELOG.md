@@ -4,6 +4,13 @@ All notable changes to summawise will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.1] - July 14th, 2024
+
+### Changed
+
+- Enable the `file_search` option by default when creating a new assistant.
+- Change the `file_search`/`interpret_code` CLI options passed to the assistant creation command to from flags to [booleans](https://github.com/pallets/click/blob/14f735cf59618941cf2930e633eb77651b1dc7cb/src/click/types.py#L599-L621).
+
 ## [0.3.0] - July 13th, 2024
 
 ### Added
