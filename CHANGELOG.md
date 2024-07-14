@@ -4,6 +4,11 @@ All notable changes to summawise will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Propagate resources necessary for code interpretation to OpenAI API when using assistants which have the functionality enabled.
+  - Note: There is a limit of 20 files (per execution, or "Thread") at the time of writing this. [[Code reference]](https://github.com/ooojustin/summawise/blob/95af17fe0ae058d242af27fef8029e08e133fb70/summawise/ai.py#L167-L178)
+
 ## [0.3.1] - July 14th, 2024
 
 ### Changed
