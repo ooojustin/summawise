@@ -4,6 +4,30 @@ All notable changes to summawise will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.0] - July 13th, 2024
+
+### Added
+
+- Started building out CLI using. The 'scan' command mirrors the original functionality from past versions.
+  - You can use the `summawise --help` command to get CLI help, and that functionality is nested. For example, the following commands would also work:
+    - `summawise assistant --help`
+    - `summawise assistant create --help`
+- Added support for multiple assistants. This includes the following commands (as referenced above):
+  - `summawise assistant list`
+  - `summawise assistant create`
+  - `summawise assistant delete`
+- Assistants created/managed via this tool mirror the functionality offered by OpenAI's official beta API.
+
+### Changed
+
+- Implemented `prompt_toolkit` library for user prompts to include better completion/validation.
+- Refactored certain aspects of codebase to better support CLI based functionality moving forward.
+
+#### Disclaimer
+
+As you may notice with some of the changes in this update, the functionality and intended use cases are growing beyond what the application was originally designed for.
+This was ultimately the goal, and is intentional. As a result, this also means the project name _may_ change prior to or with the release of a version 1.0.
+
 ## [0.2.3] - July 6th, 2024
 
 ### Added
