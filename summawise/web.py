@@ -1,11 +1,11 @@
 import requests, tempfile
 from pathlib import Path
-from . import youtube
+from . import ai, youtube
 from .files.processing import process_file
 from .data import DataUnit
 from .errors import NotSupportedError
 
-def process_url(url: str) -> str:
+def process_url(url: str) -> ai.Resources:
     if youtube.is_url(url):
         return youtube.process_url(url)
 
