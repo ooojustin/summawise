@@ -1,4 +1,4 @@
-import pickle, gzip, hashlib, chardet, xxhash
+import re, pickle, gzip, hashlib, chardet, xxhash
 from typing import TypeVar, Type, List, Optional, NamedTuple, Union
 from pathlib import Path
 from enum import Enum
@@ -116,6 +116,9 @@ def has_parent_directory(path: Path, dir_name: str) -> bool:
     path_str = normalize(str(path))
     return dir_name in path_str
 
+def matches_pattern(text: str, pattern: str) -> bool:
+    return re.search(pattern, text) is not None
+
 class FilteredFiles(NamedTuple):
     files: List[Path]
     total_count: int
@@ -123,7 +126,8 @@ class FilteredFiles(NamedTuple):
 
 def filter_files(all_files: List[Path]) -> FilteredFiles:
     encoding_whitelist = [Encoding.UTF_8, Encoding.ASCII]
-    dir_blacklist = [".git", "node_modules", "site-packages"]
+    dir_blacklist = [".git", "node_modules", "site-packages", ".mypy_cache"]
+    pattern_blacklist = [r".*\.egg-info"]
     extension_whitelist = {
         '.py', '.js', '.txt', '.md', '.html', '.css', '.java', '.c', '.cpp',
         '.rb', '.php', '.ts', '.json', '.xml', '.csv', '.xlsx', '.pptx', '.docx',
@@ -135,6 +139,13 @@ def filter_files(all_files: List[Path]) -> FilteredFiles:
         if file_path.suffix in extension_whitelist \
         and get_encoding(file_path) in encoding_whitelist \
         and not any(has_parent_directory(file_path, dir) for dir in dir_blacklist)
+    ]
+    
+    # NOTE(justin): run actual path pattern checks in a separate loop (for optimization purposes)
+    # the goal is to filter out *most* invalid paths without regex prior to this using has_parent_directory
+    files = [
+        file for file in files if \
+        not any(matches_pattern(str(file), pattern) for pattern in pattern_blacklist)
     ]
 
     return FilteredFiles(
