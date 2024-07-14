@@ -1,6 +1,8 @@
 # summawise
 
-[![PyPI - Version](https://img.shields.io/pypi/v/summawise?style=for-the-badge&color=%23C7FF00)](https://pypi.org/project/summawise/)
+[![PyPI - Version](https://img.shields.io/pypi/v/summawise?color=00B4FF)](https://pypi.org/project/summawise/)
+[![PyPI - License](https://img.shields.io/pypi/l/summawise)](https://github.com/ooojustin/summawise/blob/main/LICENSE)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/summawise)](https://pypi.org/project/summawise/)
 
 Summarize information from vectorized files using OpenAI's powerful models, and explore data further with an interactive prompt for deep dives into content.
 
