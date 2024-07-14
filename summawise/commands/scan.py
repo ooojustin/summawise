@@ -27,9 +27,9 @@ def scan(user_input: Tuple[str, ...]):
         else:
             input_str = prompt("Enter a URL or local file path: ").strip('\'"')
 
-        # invoke process_input func to handle processing of data and retrieve VectorStore ID
+        # invoke process_input func to handle processing of data and retrieve vector store/file id(s)
         try:
-            vector_store_id = process_input(input_str)
+            resources = process_input(input_str)
             break
         except NotSupportedError as ex:
             print(ex)
@@ -45,6 +45,7 @@ def scan(user_input: Tuple[str, ...]):
             continue
 
     # make sure the VectorStore ID we got seems correct
+    vector_store_id = resources.vector_store_id
     try:
         assert len(vector_store_id) > 0, "empty"
         assert vector_store_id.startswith("vs_"), "invalid format"
@@ -127,7 +128,7 @@ def scan(user_input: Tuple[str, ...]):
         except Exception as e:
             print(f"Error in chat: {e}")
 
-def process_input(user_input: str) -> str:
+def process_input(user_input: str) -> ai.Resources:
     """Takes user input, attempts to return OpenAI VectorStore ID after processing data."""
     conditional_exit(user_input)
 

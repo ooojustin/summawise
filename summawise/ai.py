@@ -113,10 +113,10 @@ def get_file_infos(files: List[Path]) -> List[FileInfo]:
     FileCache.save()
     return file_infos
 
-def create_vector_store(name: str, file_paths: List[Path]) -> VectorStore:
 def create_vector_store_from_file_ids(name: str, file_ids: List[str]) -> VectorStore:
     return Client.beta.vector_stores.create(name = name, file_ids = file_ids)
 
+def create_vector_store(name: str, file_paths: List[Path]) -> Resources:
     print(f"Creating vector store with {len(file_paths)} file(s).", end = " ")
     file_infos = get_file_infos(file_paths)
     file_ids = [info.file_id for info in file_infos]
@@ -124,8 +124,8 @@ def create_vector_store_from_file_ids(name: str, file_ids: List[str]) -> VectorS
     cached_count = sum(1 for info in file_infos if info.cached)
     print(f"[{cached_count} file(s) already cached]" if cached_count > 0 else "")
 
-    vector_store = Client.beta.vector_stores.create(name = name, file_ids = file_ids)
-    return vector_store
+    vector_store = create_vector_store_from_file_ids(name, file_ids)
+    return Resources([vector_store.id], file_ids)
 
 def create_assistant(
     model: str,
