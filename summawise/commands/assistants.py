@@ -1,4 +1,5 @@
 import click
+from click import types as ctypes
 from typing import Optional
 from .. import ai, utils
 from ..assistants import Assistant
@@ -21,8 +22,8 @@ def list():
 @click.option("-i", "--instructions", prompt = True, help = "Instructions for the assistant.")
 @click.option("-m", "--model", default = None, help = "The model to use.")
 @click.option("-d", "--description", default = None, help = "Description of the assistant.")
-@click.option("-fs", "--file_search", is_flag = True, help = "Enable file search capability.")
-@click.option("-ic", "--interpret_code", is_flag = True, help = "Enable code interpretation capability.")
+@click.option("-fs", "--file_search", type = ctypes.BOOL, default = "true", help = "Enable or disable file search capability. [Enabled by default.]")
+@click.option("-ic", "--interpret_code", type = ctypes.BOOL, default = "false", help = "Enable or disable code interpretation capability. [Disabled by default.]")
 @click.option("-rwj", "--respond_with_json", is_flag = True, help = "Responses should be in valid JSON format.")
 @click.option("--temperature", default = None, type = float, help = "Temperature setting for the model.")
 @click.option("--top_p", default = None, type = float, help = "Top-p setting for the model.")
