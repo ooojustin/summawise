@@ -95,7 +95,7 @@ def get_file_infos(files: List[Path]) -> List[FileInfo]:
     file_infos: List[FileInfo] = []
     for file_path in files:
 
-        hash = FileUtils.calculate_hash(file_path)
+        hash = utils.calculate_hash(file_path)
         assert isinstance(hash, str), \
             "Calculated hash should be of type 'str'. Ensure the 'intdigest' parameter is set to false."
 

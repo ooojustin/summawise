@@ -5,10 +5,11 @@ from importlib import metadata
 from typing import Any, Optional, Callable, Union, Tuple, Set, Dict
 from pathlib import Path
 from packaging.version import Version
-from .errors import ValueTypeError
 from packaging.version import Version
 from prompt_toolkit.document import Document
 from prompt_toolkit.validation import Validator, ValidationError
+from .errors import ValueTypeError
+from .data import HashAlg
 
 package_name = lambda: __name__.split('.')[0]
 utc_now = lambda: datetime.utcnow()
@@ -155,3 +156,11 @@ def try_parse_int(value: str, default: Optional[int] = None) -> Optional[int]:
         return int(value)
     except (ValueError, TypeError):
         return default
+
+def calculate_hash(
+    _input: Union[Path, str, bytes], 
+    algorithm: HashAlg = HashAlg.SHA3_256,
+    intdigest: bool = False
+) -> Union[str, int]:
+    assert_type(_input, (bytes, str, Path))
+    return algorithm.calculate(_input, intdigest)

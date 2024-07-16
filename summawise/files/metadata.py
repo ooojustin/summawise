@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
-from . import utils as FileUtils
 from ..serializable import Serializable
+from ..utils import calculate_hash
 
 @dataclass
 class FileMetadata(Serializable):
@@ -17,7 +17,7 @@ class FileMetadata(Serializable):
 
     @classmethod
     def create_from_path(cls, file_path: Path) -> "FileMetadata":
-        hash = str(FileUtils.calculate_hash(file_path))
+        hash = str(calculate_hash(file_path))
         stats = file_path.stat()
         sz_bytes = stats.st_size
         created_at = stats.st_ctime
