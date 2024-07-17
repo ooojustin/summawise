@@ -1,4 +1,4 @@
-import tempfile, traceback, sys
+import tempfile, traceback, pygments, sys
 from datetime import datetime
 from dataclasses import is_dataclass, fields
 from importlib import metadata
@@ -6,6 +6,13 @@ from typing import Any, Optional, Callable, Union, Tuple, Set, Dict, List
 from pathlib import Path
 from packaging.version import Version
 from packaging.version import Version
+from whats_that_code.election import guess_language_all_methods
+from pygments.lexers import TextLexer, get_lexer_by_name
+from pygments.lexers import guess_lexer as pygments_guess_lexer
+from pygments.lexer import Lexer
+from pygments.formatter import Formatter
+from pygments.formatters import  TerminalFormatter
+from pygments.util import ClassNotFound
 from prompt_toolkit.document import Document
 from prompt_toolkit.validation import Validator, ValidationError
 from .errors import ValueTypeError
@@ -201,3 +208,23 @@ def ex_to_str(ex: Exception, append = "", include_traceback: bool = True) -> str
 def expand_ex(ex: Exception, append = "", include_traceback: bool = True) -> Exception:
     strval = ex_to_str(ex, append, include_traceback)
     return ex.__class__(strval)
+
+def guess_lexer(code: str) -> Optional[Lexer]:
+    language_name = guess_language_all_methods(code)
+    if language_name:
+        try:
+            return get_lexer_by_name(language_name)
+        except ClassNotFound:
+            pass
+    try:
+        return pygments_guess_lexer(code)
+    except Exception:
+        pass
+
+def highlight_code(code: str, lexer: Optional[Lexer] = None, formatter: Optional[Formatter] = None):
+    if lexer is None:
+        lexer = guess_lexer(code) or TextLexer()
+    if formatter is None:
+        formatter = TerminalFormatter()
+    highlighted_code = pygments.highlight(code, lexer, formatter)
+    return highlighted_code
