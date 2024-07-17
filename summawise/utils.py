@@ -49,8 +49,10 @@ class NumericChoiceValidator(Validator):
 
 class ChoiceValidator(Validator):
 
-    def __init__(self, valid_choices: List[str]):
+    def __init__(self, valid_choices: List[str], allow_empty: bool = False):
         self.valid_choices = valid_choices
+        if allow_empty:
+            self.valid_choices.append("")
 
     def validate(self, document: Document):
         choice = document.text # input as a string

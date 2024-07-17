@@ -3,14 +3,13 @@ from openai.types.beta import VectorStore
 from typing import Tuple, Dict, Optional
 from prompt_toolkit import prompt
 from pathlib import Path
-from .. import ai
+from .. import ai, utils
 from ..settings import Settings
 from ..assistants import Assistant
 from ..web import process_url
 from ..files.processing import process_file, process_dir
 from ..files import cache as FileCache
 from ..errors import NotSupportedError
-from ..utils import NumericChoiceValidator, delete_lines
 from ..data import DataUnit
 
 @click.command()
@@ -62,11 +61,12 @@ def scan(user_input: Tuple[str, ...]):
             print(f"{idx}) {assistant.name}")
 
         # prompt user to select assistant 
-        choice = int(prompt("Select an assistant: ", validator = NumericChoiceValidator(assistant_choices.keys())))
+        choices = list(assistant_choices.keys())
+        choice = int(prompt("Select an assistant: ", validator = utils.NumericChoiceValidator(choices)))
         assistant = assistant_choices[choice]
 
         # remove assistant selection menu, output valid choice
-        delete_lines(len(assistant_choices) + 2)
+        utils.delete_lines(len(assistant_choices) + 2)
         print(f"Using selected assistant: {assistant.name}")
 
     # verify vector store validity w/ openai, output some generic info
@@ -123,8 +123,9 @@ def scan(user_input: Tuple[str, ...]):
         conditional_exit(input_str)
         try:
             ai.get_thread_response(thread.id, assistant.id, input_str, auto_print = True)
-        except Exception as e:
-            print(f"Error in chat [{type(e)}]: {e}")
+        except Exception as ex:
+            print("\nError in the chat:")
+            print(utils.expand_ex(ex))
 
 def process_input(user_input: str) -> ai.Resources:
     """Takes user input, attempts to return OpenAI VectorStore ID after processing data."""
@@ -145,5 +146,6 @@ def process_input(user_input: str) -> ai.Resources:
 def conditional_exit(user_input: str) -> None:
     """Conditionally exit the program based on the users input."""
     if user_input.lower() in ["exit", "quit", ":q"]:
-        if user_input == ":q": print("They should call you Vim Diesel.") # NOTE(justin): this is here to stay
+        if user_input == ":q": 
+            print("They should call you Vim Diesel.") # NOTE(justin): this is here to stay
         sys.exit()
