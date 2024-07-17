@@ -1,4 +1,4 @@
-import tempfile, sys
+import tempfile, traceback, sys
 from datetime import datetime
 from dataclasses import is_dataclass, fields
 from importlib import metadata
@@ -177,3 +177,27 @@ def calculate_hash(
 ) -> Union[str, int]:
     assert_type(_input, (bytes, str, Path))
     return algorithm.calculate(_input, intdigest)
+
+def ex_to_str(ex: Exception, append = "", include_traceback: bool = True) -> str:
+    """
+    Returns a formatted string representation of the given exception.
+
+    Parameters:
+        ex (Exception): The exception object to be formatted.
+
+    Returns:
+        str: A string containing the exception type and traceback information.
+    """
+    strval = f"[{type(ex).__name__}] {str(ex)}"
+    if len(append):
+        strval += f": {append}"
+
+    if include_traceback:
+        traceback_str = traceback.format_exc()
+        strval += f"\nTraceback: {traceback_str}"
+
+    return strval
+
+def expand_ex(ex: Exception, append = "", include_traceback: bool = True) -> Exception:
+    strval = ex_to_str(ex, append, include_traceback)
+    return ex.__class__(strval)
