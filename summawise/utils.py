@@ -139,8 +139,9 @@ def delete_lines(count: int = 1):
     ERASE_LINE = '\x1b[2K'
     for _ in range(count):
         sys.stdout.write(CURSOR_UP_ONE)
+        sys.stdout.flush()
         sys.stdout.write(ERASE_LINE)
-    sys.stdout.flush()
+        sys.stdout.flush()
 
 converter_iso: Callable[[datetime], str] = lambda v: v.isoformat()
 converter_ts: Callable[[datetime], float] = lambda v: v.timestamp()

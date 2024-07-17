@@ -1,7 +1,7 @@
 import json, os, copy, warnings
 from dataclasses import dataclass, fields, field
 from typing import Set, Optional, Dict, List, Any, ClassVar, Tuple
-from openai import AuthenticationError, BadRequestError
+from openai import AuthenticationError
 from pathlib import Path
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter

@@ -1,7 +1,9 @@
 from typing_extensions import override
 from typing import List, Optional, NamedTuple, Dict, Set
 from pathlib import Path
-from prompt_toolkit import HTML, print_formatted_text as print
+from prompt_toolkit import ANSI, HTML, print_formatted_text as print
+from pygments.formatters import HtmlFormatter, TerminalFormatter, Terminal256Formatter
+from pygments.styles import get_style_by_name
 from dataclasses import dataclass, field
 from openai import OpenAI, AssistantEventHandler
 from openai.types.file_object import FileObject
@@ -10,6 +12,7 @@ from openai.types.beta.threads import TextContentBlock, TextDelta, Message, Text
 from openai.types.beta.threads.runs import ToolCall, ToolCallDelta
 from openai.types.beta.thread_create_params import ToolResources
 from .files.cache import FileCacheObj
+from .settings import Settings
 from . import utils
 
 Client: OpenAI
@@ -88,9 +91,13 @@ class EventHandler(AssistantEventHandler):
         if self.tool_call_completed(tool_call, True):
             return
 
-        if self.auto_print:
-            _ = tool_call.type == "code_interpreter" and tool_call.code_interpreter.input and print(flush = True)
-            print(HTML(f"Tool call completed: <b><ansiblue>{tool_call.type}</ansiblue> <i>[ID: {tool_call.id}]</i></b>"), flush = True)
+        if not self.auto_print:
+            return
+
+        if tool_call.type == "code_interpreter":
+            self.syntax_highlight_code_interpreter(tool_call)
+
+        print(HTML(f"Tool call completed: <b><ansiblue>{tool_call.type}</ansiblue> <i>[ID: {tool_call.id}]</i></b>"), flush = True)
 
     def tool_call_completed(self, tool_call: ToolCall, completed: bool = False) -> bool:
         """
@@ -117,6 +124,18 @@ class EventHandler(AssistantEventHandler):
 
         # NOTE(justin): this func only returns True if the tool_call was marked as completed *prior* to the current invokation
         return False
+    
+    def syntax_highlight_code_interpreter(self, tool_call: ToolCall) -> None:
+        assert tool_call.type == "code_interpreter"
+        settings = Settings() # type: ignore
+        code_str = tool_call.code_interpreter.input
+        if not code_str.endswith("\n"):
+            print(flush = True)
+        code_lines = len(code_str.splitlines())
+        utils.delete_lines(code_lines)
+        formatter = Terminal256Formatter(style = settings.code_style)
+        highlighted_code = utils.highlight_code(code_str, formatter = formatter)
+        print(ANSI(highlighted_code), end = "", flush = True)
 
 def init(api_key: str, verify: bool = True):
     """
@@ -212,7 +231,10 @@ def create_assistant(
         instructions = instructions,
         tools = tools,
         description = description,
-        metadata = { "created_by": utils.package_name() },
+        metadata = { 
+            "created_by": utils.package_name(),
+            "version": str(utils.get_version()),
+        },
         top_p = top_p,
         temperature = temperature,
         response_format = response_format, # type: ignore
