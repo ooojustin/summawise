@@ -1,26 +1,10 @@
-import re, pickle, gzip, hashlib, chardet, xxhash
+import re, pickle, gzip, chardet
 from typing import TypeVar, Type, List, Optional, NamedTuple, Union
 from pathlib import Path
-from enum import Enum
 from .encodings import Encoding
 from ..data import DataUnit
-from ..utils import assert_type
 
 T = TypeVar("T")
-
-class HashAlg(Enum):
-    SHA_256 = (hashlib, "sha256")
-    SHA3_256 = (hashlib, "sha3_256")
-    XXH_32 = (xxhash, "xxh32")
-    XXH_64 = (xxhash, "xxh64")
-    XXH_128 = (xxhash, "xxh128")
-    XXH3_128 = (xxhash, "xxh3_128")
-    XXH3_64 = (xxhash, "xxh3_64")
-
-    def init(self):
-        module, attr_name = self.value
-        hash_init = getattr(module, attr_name)
-        return hash_init() # initialze hash object
 
 def write_str(file_path: Path, text: str, compress: bool = False) -> None:
     file_path.parent.mkdir(parents = True, exist_ok = True)
@@ -64,27 +48,6 @@ def load_object(file_path: Path, cls: Type[T]) -> T:
 def load_object_any(file_path: Path) -> object:
     data = read_bytes(file_path)
     return pickle.loads(data)
-
-def calculate_hash(
-    _input: Union[Path, str, bytes], 
-    algorithm: HashAlg = HashAlg.SHA3_256,
-    intdigest: bool = False
-) -> Union[str, int]:
-    assert_type(_input, (bytes, str, Path))
-    hash_obj = algorithm.init()
-
-    if isinstance(_input, (bytes, str)):
-        _input = _input.encode() if isinstance(_input, str) else _input
-        hash_obj.update(_input)
-    elif isinstance(_input, Path):
-        with open(_input, "rb") as f:
-            for chunk in iter(lambda: f.read(8 * DataUnit.KB), b""):
-                hash_obj.update(chunk)
-
-    return (
-        hash_obj.hexdigest() if not intdigest else
-        int.from_bytes(hash_obj.digest(), byteorder = "big")
-    )
 
 def list_files(directory: Path, recursive: bool = True) -> List[Path]:
     assert directory.is_dir(), f"The provided path to 'list_files' must be a directory. (Value: '{directory}')"

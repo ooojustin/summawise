@@ -1,12 +1,13 @@
 import json, os, copy, warnings
 from dataclasses import dataclass, fields, field
 from typing import Set, Optional, Dict, List, Any, ClassVar, Tuple
-from openai import AuthenticationError, BadRequestError
+from openai import AuthenticationError
 from pathlib import Path
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
+from pygments.styles import get_all_styles
 from . import utils, ai
-from .utils import Singleton
+from .utils import Singleton, ChoiceValidator
 from .data import DataMode
 from .files import utils as FileUtils
 from .assistants import DEFAULT_ASSISTANTS, DEFAULT_MODEL, Assistant, AssistantList
@@ -19,11 +20,13 @@ class Settings(metaclass = Singleton):
     model: str
     compression: bool
     data_mode: DataMode
+    code_style: str
 
+    DEPRECATED_FIELDS: ClassVar[Set[str]] = {"assistant_id"}
     DEFAULT_MODEL: ClassVar[str] = DEFAULT_MODEL
     DEFAULT_COMPRESSION: ClassVar[bool] = True
+    DEFAULT_CODE_STYLE: ClassVar[str] = "monokai"
     DEFAULT_DATA_MODE: ClassVar[DataMode] = DataMode.BIN
-    DEPRECATED_FIELDS: ClassVar[Set[str]] = {"assistant_id"}
 
     # NOTE(justin): This class functions as a singleton. Example usage anywhere:
     # settings = Settings() # type: ignore (dismiss warnings related to required arguments)
@@ -53,6 +56,7 @@ class Settings(metaclass = Singleton):
             assistants = assistants,
             model = data.pop("model", Settings.DEFAULT_MODEL),
             compression = data.pop("compression", Settings.DEFAULT_COMPRESSION),
+            code_style = data.pop("code_style", Settings.DEFAULT_CODE_STYLE),
             data_mode = DataMode(data.pop("data_mode", Settings.DEFAULT_DATA_MODE.value)),
             **data
         )
@@ -128,17 +132,19 @@ class Settings(metaclass = Singleton):
             if not api_key:
                 print("The API key you entered is invalid. Try again.")
 
-        model_completer = WordCompleter(["gpt-4o", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"])
-        while True:
-            try:
-                # TODO(justin): add validator to this prompt
-                model = prompt(f"Enter the OpenAI model to use [Default: {Settings.DEFAULT_MODEL}]: ", completer = model_completer)
-                break
-            except BadRequestError as ex:
-                if ex.code == "model_not_found":
-                    print("The model identifier you entered is invalid. Try again.")
-                    continue
-                raise ex
+        valid_models = ["gpt-4o", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"]
+        model_validator = ChoiceValidator(valid_models, allow_empty = True)
+        model_completer = WordCompleter(valid_models)
+        model = prompt(f"Enter the OpenAI model to use [Default: {Settings.DEFAULT_MODEL}]: ", completer = model_completer, validator = model_validator)
+        if not len(model.strip()):
+            model = Settings.DEFAULT_MODEL
+
+        all_styles = list(get_all_styles())
+        style_validator = ChoiceValidator(all_styles, allow_empty = True)
+        style_completer = WordCompleter(all_styles)
+        style = prompt(f"Enter the OpenAI model to use [Default: {Settings.DEFAULT_CODE_STYLE}]: ", completer = style_completer, validator = style_validator)
+        if not len(style.strip()):
+            style = Settings.DEFAULT_CODE_STYLE
 
         assistants: List[Assistant] = []
         for da in DEFAULT_ASSISTANTS:
@@ -155,8 +161,9 @@ class Settings(metaclass = Singleton):
             model = model, 
             assistant_id = "", # NOTE(justin): deprecated in version 0.3.0
             assistants = AssistantList(assistants),
+            compression = Settings.DEFAULT_COMPRESSION,
+            code_style = style,
             data_mode = Settings.DEFAULT_DATA_MODE,
-            compression = Settings.DEFAULT_COMPRESSION
         )
 
 def validate_api_key(api_key: str) -> Optional[str]:

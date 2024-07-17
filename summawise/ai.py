@@ -1,15 +1,18 @@
 from typing_extensions import override
-from typing import List, Optional, NamedTuple
+from typing import List, Optional, NamedTuple, Dict, Set
 from pathlib import Path
+from prompt_toolkit import ANSI, HTML, print_formatted_text as print
+from pygments.formatters import HtmlFormatter, TerminalFormatter, Terminal256Formatter
+from pygments.styles import get_style_by_name
 from dataclasses import dataclass, field
 from openai import OpenAI, AssistantEventHandler
 from openai.types.file_object import FileObject
 from openai.types.beta import Thread, Assistant, VectorStore 
 from openai.types.beta.threads import TextContentBlock, TextDelta, Message, Text
-from openai.types.beta.threads.runs import ToolCall
+from openai.types.beta.threads.runs import ToolCall, ToolCallDelta
 from openai.types.beta.thread_create_params import ToolResources
-from .files import utils as FileUtils
 from .files.cache import FileCacheObj
+from .settings import Settings
 from . import utils
 
 Client: OpenAI
@@ -30,32 +33,109 @@ class Resources:
 
 class EventHandler(AssistantEventHandler):
 
+    auto_print: bool
+    response_text: str
+
+    _tool_calls: Dict[str, ToolCall]
+    _completed_tool_calls: Set[str]
+
     def __init__(self, auto_print: bool = False):
-        super().__init__()
         self.auto_print = auto_print
         self.response_text = ""
+
+        self._tool_calls = dict()
+        self._completed_tool_calls = set()
+
+        super().__init__()
 
     @override
     def on_text_created(self, text: Text) -> None:
         _ = text
-        if self.auto_print: print("\nsummawise > ", end = "", flush = True)
+        if self.auto_print: 
+            print("\nsummawise > ", end = "", flush = True)
 
     @override
     def on_text_delta(self, delta: TextDelta, snapshot: Text) -> None:
         _ = snapshot
-        if self.auto_print: print(delta.value, end = "", flush = True)
-
-    @override
-    def on_tool_call_created(self, tool_call: ToolCall):
-        _ = tool_call
+        if self.auto_print: 
+            print(delta.value, end = "", flush = True)
 
     @override
     def on_message_done(self, message: Message) -> None:
-        print() # new line
+        print(flush = True) # new line
         for content in message.content:
             # other possibilities: ImageFileContentBlock, ImageURLContentBlock
             if isinstance(content, TextContentBlock):
                 self.response_text += content.text.value
+
+    @override
+    def on_tool_call_created(self, tool_call: ToolCall):
+        if self.tool_call_completed(tool_call):
+            return
+
+        if self.auto_print:
+            print(flush = True)
+            print(HTML(f"Tool call created: <b><ansiblue>{tool_call.type}</ansiblue> <i>[ID: {tool_call.id}]</i></b>"), flush = True)
+
+    @override
+    def on_tool_call_delta(self, delta: ToolCallDelta, snapshot: ToolCall) -> None:
+        if self.tool_call_completed(snapshot):
+            return
+
+        if delta.type == "code_interpreter" and delta.code_interpreter:
+            if self.auto_print: 
+                print(delta.code_interpreter.input or "", end = "", flush = True)
+
+    @override
+    def on_tool_call_done(self, tool_call: ToolCall) -> None:
+        if self.tool_call_completed(tool_call, True):
+            return
+
+        if not self.auto_print:
+            return
+
+        if tool_call.type == "code_interpreter":
+            self.syntax_highlight_code_interpreter(tool_call)
+
+        print(HTML(f"Tool call completed: <b><ansiblue>{tool_call.type}</ansiblue> <i>[ID: {tool_call.id}]</i></b>"), flush = True)
+
+    def tool_call_completed(self, tool_call: ToolCall, completed: bool = False) -> bool:
+        """
+        Updates the state of a ToolCall stored in the EventHandler based on its id.
+
+        Returns:
+            completed (bool): Indicates whether or not the tool call has already been completed previously.
+
+        Invoke on the following funcs:
+        - on_tool_call_created: set_tool_call(tool_call)
+        - on_tool_call_delta: set_tool_call(snapshot)
+        - on_tool_call_done: set_tool_call(tool_call, True)
+        """
+        if tool_call.id in self._completed_tool_calls:
+            # already maked as completed, return early
+            return True
+
+        # update object based on id
+        self._tool_calls[tool_call.id] = tool_call
+
+        # conditionally mark as completed
+        if completed:
+            self._completed_tool_calls.add(tool_call.id)
+
+        # NOTE(justin): this func only returns True if the tool_call was marked as completed *prior* to the current invokation
+        return False
+    
+    def syntax_highlight_code_interpreter(self, tool_call: ToolCall) -> None:
+        assert tool_call.type == "code_interpreter"
+        settings = Settings() # type: ignore
+        code_str = tool_call.code_interpreter.input
+        if not code_str.endswith("\n"):
+            print(flush = True)
+        code_lines = len(code_str.splitlines())
+        utils.delete_lines(code_lines)
+        formatter = Terminal256Formatter(style = settings.code_style)
+        highlighted_code = utils.highlight_code(code_str, formatter = formatter)
+        print(ANSI(highlighted_code), end = "", flush = True)
 
 def init(api_key: str, verify: bool = True):
     """
@@ -95,7 +175,7 @@ def get_file_infos(files: List[Path]) -> List[FileInfo]:
     file_infos: List[FileInfo] = []
     for file_path in files:
 
-        hash = FileUtils.calculate_hash(file_path)
+        hash = utils.calculate_hash(file_path)
         assert isinstance(hash, str), \
             "Calculated hash should be of type 'str'. Ensure the 'intdigest' parameter is set to false."
 
@@ -151,7 +231,10 @@ def create_assistant(
         instructions = instructions,
         tools = tools,
         description = description,
-        metadata = { "created_by": utils.package_name() },
+        metadata = { 
+            "created_by": utils.package_name(),
+            "version": str(utils.get_version()),
+        },
         top_p = top_p,
         temperature = temperature,
         response_format = response_format, # type: ignore

@@ -1,6 +1,8 @@
-import inspect
+import inspect, hashlib, xxhash
 from enum import Enum
-from typing import List
+from typing import List, Union
+from pathlib import Path
+from .errors import ValueTypeError
 
 class DataMode(Enum):
     JSON = "json"
@@ -52,4 +54,38 @@ class DataUnit:
             uidx += 1
         return f"{size:.2f} {units[uidx]}"
 
+class HashAlg(Enum):
+    SHA_256 = (hashlib, "sha256")
+    SHA3_256 = (hashlib, "sha3_256")
+    XXH_32 = (xxhash, "xxh32")
+    XXH_64 = (xxhash, "xxh64")
+    XXH_128 = (xxhash, "xxh128")
+    XXH3_128 = (xxhash, "xxh3_128")
+    XXH3_64 = (xxhash, "xxh3_64")
 
+    def init(self):
+        module, attr_name = self.value
+        hash_init = getattr(module, attr_name)
+        return hash_init() # initialze hash object
+
+    def calculate(
+        self,
+        _input: Union[Path, str, bytes], 
+        # algorithm: HashAlg = HashAlg.SHA3_256,
+        intdigest: bool = False
+    ) -> Union[str, int]:
+        hash_obj = self.init()
+        if isinstance(_input, (bytes, str)):
+            _input = _input.encode() if isinstance(_input, str) else _input
+            hash_obj.update(_input)
+        elif isinstance(_input, Path):
+            with open(_input, "rb") as f:
+                for chunk in iter(lambda: f.read(8 * DataUnit.KB), b""):
+                    hash_obj.update(chunk)
+        else:
+            raise ValueTypeError(_input, (Path, str, bytes))
+
+        return (
+            hash_obj.hexdigest() if not intdigest else
+            int.from_bytes(hash_obj.digest(), byteorder = "big")
+        )
