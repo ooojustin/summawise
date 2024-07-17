@@ -2,7 +2,7 @@ import tempfile, sys
 from datetime import datetime
 from dataclasses import is_dataclass, fields
 from importlib import metadata
-from typing import Any, Optional, Callable, Union, Tuple, Set, Dict
+from typing import Any, Optional, Callable, Union, Tuple, Set, Dict, List
 from pathlib import Path
 from packaging.version import Version
 from packaging.version import Version
@@ -23,7 +23,7 @@ class Singleton(type):
 
 class NumericChoiceValidator(Validator):
 
-    def __init__(self, valid_choices):
+    def __init__(self, valid_choices: List[int]):
         self.valid_choices = valid_choices
 
     def validate(self, document: Document):
@@ -38,6 +38,19 @@ class NumericChoiceValidator(Validator):
             raise ValidationError(
                 message="Input the number corresponding with your choice.",
                 cursor_position=len(document.text)
+            )
+
+class ChoiceValidator(Validator):
+
+    def __init__(self, valid_choices: List[str]):
+        self.valid_choices = valid_choices
+
+    def validate(self, document: Document):
+        choice = document.text # input as a string
+        if choice not in self.valid_choices:
+            raise ValidationError(
+                message = "The choice you have input is invalid.",
+                cursor_position = len(document.text)
             )
 
 def get_summawise_dir() -> Path:
