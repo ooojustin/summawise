@@ -4,7 +4,8 @@
 [![PyPI - License](https://img.shields.io/pypi/l/summawise)](https://github.com/ooojustin/summawise/blob/main/LICENSE)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/summawise)](https://pypi.org/project/summawise/)
 
-Summarize information from vectorized files using OpenAI's powerful models, and explore data further with an interactive prompt for deep dives into content.
+Summarize information from files, links, and vectorized data using OpenAI's powerful models. Explore data further and generate code/information using an interactive prompt for deep dives into content.
+The beta API features that are built in make it superior to a standard LLM in the context of code generation relative to existing context/codebases.
 
 ## Installation
 
@@ -23,7 +24,8 @@ This tool uses OpenAI API features which are currently in beta.
 - [Assistants API](https://platform.openai.com/docs/assistants/overview)
 - [Threads](https://platform.openai.com/docs/api-reference/threads)
 - [Vector Stores](https://platform.openai.com/docs/api-reference/vector-stores)
-- [File Search (assistant "tool")](https://platform.openai.com/docs/assistants/tools/file-search)
+- [File Search (assistant tool)](https://platform.openai.com/docs/assistants/tools/file-search)
+- [Code Interpreter (assistant tool)](https://platform.openai.com/docs/assistants/tools/code-interpreter)
 
 ## Information
 
@@ -39,6 +41,4 @@ Support for a wider variety of input may be added in the future.
 ### Potential improvements:
 
 - Archive support (Both URLs and local files - automatically extract/upload contents of `.zip`/`.tar.gz` files)
-- Multiple "assistants" with more intricate instructions, which would be selected based on the type of information being analyzed.
-  - A custom assistant can already be used by manually changing the "assistant_id" property in settings file.
-- User friendly command line interface.
+- Extract natural language from certain types of content. (Ex: html/pdf)
