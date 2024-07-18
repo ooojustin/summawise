@@ -14,6 +14,7 @@ All notable changes to summawise will be documented in this file.
   - Note: There is a limit of 20 files (per execution, or "Thread") at the time of writing this. [[Code reference]](https://github.com/ooojustin/summawise/blob/95af17fe0ae058d242af27fef8029e08e133fb70/summawise/ai.py#L167-L178)
     I have a few ideas of how to address this, but it is a caveat when working with larger projects for now.
 - Original default assistants will automatically update with new changes to their configuration.
+- Show currently installed version of the package using the -v/--version option.
 
 ## [0.3.1] - July 14th, 2024
 

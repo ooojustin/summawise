@@ -1,10 +1,13 @@
 import click, sys
+from .utils import get_version
 from .commands import scan, assistant
 from .settings import Settings
 
+VERSION = get_version()
 CONTEXT_SETTINGS = {"max_content_width": sys.maxsize}
 
 @click.group(context_settings = CONTEXT_SETTINGS)
+@click.version_option(str(VERSION), "-v", "--version")
 def cli():
     """A tool to use AI to analyze and interact with vectorized data from custom sources of information."""
     pass
