@@ -4,6 +4,7 @@ from typing import Optional
 from .. import ai, utils
 from ..assistants import Assistant
 from ..settings import Settings
+from ..data import HashAlg
 
 @click.group()
 def assistant():
@@ -84,3 +85,16 @@ def delete(assistant_id: str):
     del settings.assistants[idx]
     settings.save()
     print(f"Deleted assistant successfully: {assistant.name}")
+    
+@assistant.command(hidden = True)
+@click.argument("assistant_id", type = str)
+def hash(assistant_id: str):
+    settings = Settings() # type: ignore
+
+    assistant, _ = settings.assistants.get(assistant_id)
+    if not assistant:
+        print("Failed to identify assistant to delete.")
+        return
+
+    instructions_hash = HashAlg.XXH_64.calculate(assistant.instructions)
+    print(f"Instructions hash: {instructions_hash}")
