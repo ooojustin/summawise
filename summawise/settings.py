@@ -153,7 +153,7 @@ class Settings(metaclass = Singleton):
         all_styles = list(get_all_styles())
         style_validator = ChoiceValidator(all_styles, allow_empty = True)
         style_completer = WordCompleter(all_styles)
-        style = prompt(f"Enter the OpenAI model to use [Default: {Settings.DEFAULT_CODE_STYLE}]: ", completer = style_completer, validator = style_validator)
+        style = prompt(f"Enter the code syntax highlighting style to use [Default: {Settings.DEFAULT_CODE_STYLE}]: ", completer = style_completer, validator = style_validator)
         if not len(style.strip()):
             style = Settings.DEFAULT_CODE_STYLE
 
