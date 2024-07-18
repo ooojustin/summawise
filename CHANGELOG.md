@@ -15,6 +15,7 @@ All notable changes to summawise will be documented in this file.
     I have a few ideas of how to address this, but it is a caveat when working with larger projects for now.
 - Original default assistants will automatically update with new changes to their configuration.
 - Show currently installed version of the package using the -v/--version option.
+- Add --debug option for more informative exception messages. (Will include traceback.)
 
 ## [0.3.1] - July 14th, 2024
 

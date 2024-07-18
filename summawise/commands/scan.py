@@ -14,10 +14,12 @@ from ..data import DataUnit
 
 @click.command()
 @click.argument("user_input", nargs = -1)
-def scan(user_input: Tuple[str, ...]):
+@click.pass_context
+def scan(ctx: click.Context, user_input: Tuple[str, ...]):
     """Scan and process the given input (URL or file path), and offer an interactive prompt to inquire about the vectorized data."""
     settings = Settings() # type: ignore
     FileCache.init()
+    debug = ctx.obj.get("DEBUG", False)
 
     while True:
         # prompt user for data source if not provided as an argument
@@ -35,11 +37,11 @@ def scan(user_input: Tuple[str, ...]):
             user_input = ()
             continue
         except (requests.RequestException, requests.HTTPError) as ex:
-            print(f"An error occurred while sending a web request to the provided URL:\n{ex}")
+            print(f"An error occurred while sending a web request to the provided URL: {utils.ex_to_str(ex, include_traceback = debug)}")
             user_input = ()
             continue
         except Exception as ex:
-            print(f"An unhandled error occurred while processing input:\n{ex}")
+            print(f"An unhandled error occurred while processing input: {utils.ex_to_str(ex, include_traceback = debug)}")
             user_input = ()
             continue
 
@@ -49,7 +51,7 @@ def scan(user_input: Tuple[str, ...]):
         assert len(vector_store_id) > 0, "empty"
         assert vector_store_id.startswith("vs_"), "invalid format"
     except AssertionError as ex:
-        print(f"An unknown occurred while processing input: invalid VectorStore ID. ({ex})")
+        print(f"An unknown occurred while processing input: invalid VectorStore ID: {utils.ex_to_str(ex, include_traceback = debug)}")
         return
 
     assistant: Assistant = settings.assistants[0]
@@ -99,7 +101,7 @@ def scan(user_input: Tuple[str, ...]):
 
             print(f"VectorStore ready for use. [{info}]")
         except Exception as ex:
-            print(f"Failed to validate VectorStore from provided ID (error: {type(ex)}, id: {vector_store_id}):\n{ex}")
+            print(f"Failed to validate VectorStore from provided ID ({vector_store_id}): {utils.ex_to_str(ex, include_traceback = debug)}")
             return
 
     # create thread for this conversation
@@ -113,8 +115,8 @@ def scan(user_input: Tuple[str, ...]):
         print(f"Thread created with ID: {thread.id}")
         print("Generating summary...")
         ai.get_thread_response(thread.id, assistant.id, "Please summarize the transcript.", auto_print = True)
-    except Exception as e:
-        print(f"Error generating summary: {e}")
+    except Exception as ex:
+        print(f"Error generating summary: {utils.ex_to_str(ex, include_traceback = debug)}")
         return
     
     print("\nYou can now ask questions about the transcript. Type 'exit' to quit.")
@@ -124,8 +126,7 @@ def scan(user_input: Tuple[str, ...]):
         try:
             ai.get_thread_response(thread.id, assistant.id, input_str, auto_print = True)
         except Exception as ex:
-            print("\nError in the chat:")
-            print(utils.ex_to_str(ex))
+            print(f"\nError occurred during conversation: {utils.ex_to_str(ex, include_traceback = debug)}")
 
 def process_input(user_input: str) -> ai.Resources:
     """Takes user input, attempts to return OpenAI VectorStore ID after processing data."""
