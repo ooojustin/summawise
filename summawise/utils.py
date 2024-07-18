@@ -208,10 +208,6 @@ def ex_to_str(ex: Exception, append = "", include_traceback: bool = True) -> str
 
     return strval
 
-def expand_ex(ex: Exception, append = "", include_traceback: bool = True) -> Exception:
-    strval = ex_to_str(ex, append, include_traceback)
-    return ex.__class__(strval)
-
 def guess_lexer(code: str) -> Optional[Lexer]:
     language_name = guess_language_all_methods(code)
     if language_name:

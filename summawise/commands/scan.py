@@ -125,7 +125,7 @@ def scan(user_input: Tuple[str, ...]):
             ai.get_thread_response(thread.id, assistant.id, input_str, auto_print = True)
         except Exception as ex:
             print("\nError in the chat:")
-            print(utils.expand_ex(ex))
+            print(utils.ex_to_str(ex))
 
 def process_input(user_input: str) -> ai.Resources:
     """Takes user input, attempts to return OpenAI VectorStore ID after processing data."""
