@@ -6,7 +6,7 @@ from pygments.lexers import TextLexer, get_lexer_by_name
 from pygments.lexers import guess_lexer as pygments_guess_lexer
 from pygments.lexer import Lexer
 from pygments.formatter import Formatter
-from pygments.formatters import  TerminalFormatter
+from pygments.formatters import  Terminal256Formatter
 from pygments.util import ClassNotFound
 
 def guess_lexer(code: str) -> Optional[Lexer]:
@@ -25,6 +25,6 @@ def highlight_code(code: str, lexer: Optional[Lexer] = None, formatter: Optional
     if lexer is None:
         lexer = guess_lexer(code) or TextLexer()
     if formatter is None:
-        formatter = TerminalFormatter()
+        formatter = Terminal256Formatter()
     highlighted_code = pygments.highlight(code, lexer, formatter)
     return highlighted_code

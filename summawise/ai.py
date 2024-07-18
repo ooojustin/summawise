@@ -1,9 +1,6 @@
 from typing_extensions import override
 from typing import List, Optional, NamedTuple, Dict, Set
 from pathlib import Path
-from prompt_toolkit import ANSI, HTML, print_formatted_text as print
-from pygments.formatters import HtmlFormatter, TerminalFormatter, Terminal256Formatter
-from pygments.styles import get_style_by_name
 from dataclasses import dataclass, field
 from openai import OpenAI, AssistantEventHandler
 from openai.types.file_object import FileObject
@@ -11,6 +8,8 @@ from openai.types.beta import Thread, Assistant, VectorStore
 from openai.types.beta.threads import TextContentBlock, TextDelta, Message, Text
 from openai.types.beta.threads.runs import ToolCall, ToolCallDelta
 from openai.types.beta.thread_create_params import ToolResources
+from prompt_toolkit import ANSI, HTML, print_formatted_text as print
+from pygments.formatters import Terminal256Formatter
 from .files.cache import FileCacheObj
 from .settings import Settings
 from . import utils
@@ -102,6 +101,10 @@ class EventHandler(AssistantEventHandler):
     def tool_call_completed(self, tool_call: ToolCall, completed: bool = False) -> bool:
         """
         Updates the state of a ToolCall stored in the EventHandler based on its id.
+
+        Parameters:
+            tool_call (ToolCall): The ToolCall object to update the state for.
+            completed (bool): Indicates whether the tool call has been completed upon this call. Default is False.
 
         Returns:
             completed (bool): Indicates whether or not the tool call has already been completed previously.

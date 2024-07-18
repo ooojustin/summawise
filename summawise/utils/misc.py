@@ -2,7 +2,7 @@ import tempfile, traceback, sys
 from datetime import datetime
 from dataclasses import is_dataclass, fields
 from importlib import metadata
-from typing import Any, Optional, Callable, Union, Tuple, Set, Dict, List
+from typing import Any, Optional, Callable, Union, Tuple, Set, Dict
 from pathlib import Path
 from packaging.version import Version
 from packaging.version import Version
@@ -172,5 +172,20 @@ def calculate_hash(
     algorithm: HashAlg = HashAlg.SHA3_256,
     intdigest: bool = False
 ) -> Union[str, int]:
+    """
+    Calculate the hash of the input using the specified algorithm.
+
+    Parameters:
+        _input (Union[Path, str, bytes]): The input data to calculate the hash for.
+        algorithm (HashAlg): The hashing algorithm to use to calculate the hash with.
+        intdigest (bool): Whether to return the hash as an integer or a string.
+
+    Returns:
+        Union[str, int]: The calculated hash, either as a string or an integer.
+
+    Raises:
+        ValueError: If the hash algorithm/object is not valid.
+        ValueTypeError: If the input data type is not one of Path, str, or bytes.
+    """
     assert_type(_input, (bytes, str, Path))
     return algorithm.calculate(_input, intdigest)

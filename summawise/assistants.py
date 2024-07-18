@@ -110,8 +110,18 @@ class AssistantList(List[Assistant]):
     
     def get(self, identifier: str) -> Tuple[Optional[Assistant], int]:
         """
-        Get an assistant from an identifier. This is available to be lenient with user input.
-        Acceptable identifiers include: API ID, assistant name, or index associated with assistant
+        Get an assistant from an identifier.
+
+        This method retrieves an assistant object based on the provided identifier. The identifier can be one of the following:
+        - API ID: If the identifier starts with 'asst_', it is treated as an API ID and the assistant is retrieved using this ID.
+        - Assistant name: If the identifier is a valid assistant name, the assistant is retrieved based on the name.
+        - Menu ID: If the identifier is numeric, it retrieves the assistant associated with that number in the 'list' command.
+
+        Parameters:
+            identifier (str): The identifier used to retrieve the assistant.
+
+        Returns:
+            Tuple[Optional[Assistant], int]: A tuple containing the retrieved assistant object and its index in the list of assistants. Returns (None, -1) if not found.
         """
         idx = -1
 
