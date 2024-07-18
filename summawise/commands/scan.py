@@ -4,8 +4,8 @@ from typing import Tuple, Dict, Optional
 from prompt_toolkit import prompt
 from pathlib import Path
 from .. import ai, utils
+from ..assistants import Assistant, CONVERSATION_INITS, ConversationInit
 from ..settings import Settings
-from ..assistants import Assistant
 from ..web import process_url
 from ..files.processing import process_file, process_dir
 from ..files import cache as FileCache
@@ -106,20 +106,30 @@ def scan(ctx: click.Context, user_input: Tuple[str, ...]):
 
     # create thread for this conversation
     try:
-        # TODO(justin): change message used to initialize thread based on type of input data/source
         thread = ai.create_thread(
             resources,
             file_search = assistant.file_search,
             code_interpreter = assistant.interpret_code
         )
         print(f"Thread created with ID: {thread.id}")
-        print("Generating summary...")
-        ai.get_thread_response(thread.id, assistant.id, "Please summarize the transcript.", auto_print = True)
     except Exception as ex:
-        print(f"Error generating summary: {utils.ex_to_str(ex, include_traceback = debug)}")
+        print(f"Error creating thread: {utils.ex_to_str(ex, include_traceback = debug)}")
+        return
+
+    # initialize the conversation with a summary
+    try:
+        default_ci = ConversationInit(
+            user_msg = "Generating summary of content...",
+            gpt_msg = "Please identify what the provided content is and provide a summary."
+        )
+        ci = CONVERSATION_INITS.get(assistant, default_ci)
+        print(ci.user_msg)
+        ai.get_thread_response(thread.id, assistant.id, ci.gpt_msg, auto_print = True)
+    except Exception as ex:
+        print(f"Error initializing conversation: {utils.ex_to_str(ex, include_traceback = debug)}")
         return
     
-    print("\nYou can now ask questions about the transcript. Type 'exit' to quit.")
+    print("\nYou can now ask questions about the content. Type 'exit' to quit.")
     while True:
         input_str = prompt("\nyou > ")
         conditional_exit(input_str)

@@ -1,8 +1,9 @@
 import warnings
-from typing import List, Optional, Iterable, Callable, TypeVar, Tuple
+from typing import Dict, List, Optional, Iterable, Callable, TypeVar, Tuple, NamedTuple
 from datetime import datetime, timezone
 from dataclasses import dataclass, asdict, field
 from . import utils
+from .data import HashAlg
 from .errors import MultipleAssistantsFoundError, MissingSortKeyError
 from openai.types.beta import Assistant as APIAssistant
 
@@ -23,6 +24,11 @@ class Assistant:
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     created_at: datetime = field(default_factory = utils.utc_now)
+
+    def __hash__(self) -> int:
+        strval = f"{self.name}\n{self.instructions}"
+        hashval = HashAlg.XXH_64.calculate(strval, intdigest = True)
+        return int(hashval)
 
     def __post_init__(self):
         missing_field_warning = lambda x: warnings.warn(f"'Assistant' object is missing expected field {x}.\nThis field should always be provided.", UserWarning)
@@ -121,6 +127,10 @@ class AssistantList(List[Assistant]):
         assistant = self[idx]
         return assistant, idx
 
+class ConversationInit(NamedTuple):
+    user_msg: str
+    gpt_msg: str
+
 TranscriptAnalyzer: Assistant = Assistant(
     name = "Transcript Analysis Assistant",
     instructions = "You are an assistant that summarizes video transcripts and answers questions about them.",
@@ -151,4 +161,15 @@ CodingAssistant: Assistant = Assistant(
     interpret_code = True
 )
 
-DEFAULT_ASSISTANTS: List[Assistant] = [TranscriptAnalyzer, CodingAssistant]
+CONVERSATION_INITS: Dict[Assistant, ConversationInit] = {
+    TranscriptAnalyzer: ConversationInit(
+        "Generating summary of transcript...", 
+        "Please summarize the transcript."
+    ),
+    CodingAssistant: ConversationInit(
+        "Generating summary of codebase...", 
+        "Please summarize the codebase."
+    )
+}
+
+DEFAULT_ASSISTANTS: List[Assistant] = list(CONVERSATION_INITS.keys())
