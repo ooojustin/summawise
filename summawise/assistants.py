@@ -93,6 +93,33 @@ class AssistantList(List[Assistant]):
             if assistant.id == id:
                 return assistant, idx
         return None, -1
+    
+    def get(self, identifier: str) -> Tuple[Optional[Assistant], int]:
+        """
+        Get an assistant from an identifier. This is available to be lenient with user input.
+        Acceptable identifiers include: API ID, assistant name, or index associated with assistant
+        """
+        idx = -1
+
+        if identifier.startswith("asst_"):
+            _, idx = self.get_by_id(identifier)
+            if idx == -1:
+                return None, -1
+
+        if idx == -1:
+            assistant = self.get_by_name(identifier)
+            if assistant:
+                _, idx = self.get_by_id(assistant.id)
+
+        if idx == -1:
+            idx = utils.try_parse_int(identifier)
+            idx = -1 if idx is None else idx - 1
+
+        if idx < 0 or idx > len(self) - 1:
+            return None, -1
+
+        assistant = self[idx]
+        return assistant, idx
 
 TranscriptAnalyzer: Assistant = Assistant(
     name = "Transcript Analysis Assistant",

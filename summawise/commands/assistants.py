@@ -75,28 +75,12 @@ def delete(assistant_id: str):
     Provided ID can be the assistant name, id, or number from 'list'.
     """
     settings = Settings() # type: ignore
-    idx = -1
 
-    if assistant_id.startswith("asst_"):
-        _, idx = settings.assistants.get_by_id(assistant_id)
-        if idx == -1:
-            print("Failed to identify assistant to delete.")
-            return
-
-    if idx == -1:
-        assistant = settings.assistants.get_by_name(assistant_id)
-        if assistant:
-            _, idx = settings.assistants.get_by_id(assistant.id)
-
-    if idx == -1:
-        idx = utils.try_parse_int(assistant_id)
-        idx = -1 if idx is None else idx - 1
-
-    if idx < 0 or idx > len(settings.assistants) - 1:
+    assistant, idx = settings.assistants.get(assistant_id)
+    if not assistant:
         print("Failed to identify assistant to delete.")
         return
 
-    assistant = settings.assistants[idx]
     del settings.assistants[idx]
     settings.save()
     print(f"Deleted assistant successfully: {assistant.name}")
