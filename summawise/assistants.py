@@ -25,6 +25,14 @@ class Assistant:
     top_p: Optional[float] = None
     created_at: datetime = field(default_factory = utils.utc_now)
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Assistant):
+            return NotImplemented
+        return (
+            self.name == other.name and 
+            self.instructions == other.instructions
+        )
+
     def __hash__(self) -> int:
         strval = f"{self.name}\n{self.instructions}"
         hashval = HashAlg.XXH_64.calculate(strval, intdigest = True)

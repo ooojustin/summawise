@@ -4,6 +4,8 @@ All notable changes to summawise will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.0] - July 18th, 2024
+
 ### Added
 
 - Included generic coding assistant by default.
@@ -13,9 +15,13 @@ All notable changes to summawise will be documented in this file.
 - Propagate resources necessary for code interpretation to OpenAI API when using assistants which have the functionality enabled.
   - Note: There is a limit of 20 files (per execution, or "Thread") at the time of writing this. [[Code reference]](https://github.com/ooojustin/summawise/blob/95af17fe0ae058d242af27fef8029e08e133fb70/summawise/ai.py#L167-L178)
     I have a few ideas of how to address this, but it is a caveat when working with larger projects for now.
-- Original default assistants will automatically update with new changes to their configuration.
-- Show currently installed version of the package using the -v/--version option.
-- Add --debug option for more informative exception messages. (Will include traceback.)
+- Add `-v/--version` option to show the version of the package that is currently installed.
+- Add `--debug` option for more informative exception messages. (It will include a traceback.)
+
+### Changed
+
+- Default assistants will automatically update based on changes made in newer versions.
+- Improve how conversations are initialized based on the assistant being used/type of content.
 
 ## [0.3.1] - July 14th, 2024
 

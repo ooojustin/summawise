@@ -100,12 +100,13 @@ class Settings(metaclass = Singleton):
         for da in DEFAULT_ASSISTANTS:
             try:
                 ea, idx = settings.assistants.get(da.name)
-                if not ea or ea.instructions != da.instructions:
+                if not ea or ea != da:
+                    # assistant doesn't exist or has changed
                     assistant = copy.copy(da)
                     api_assistant = ai.create_assistant(**da.to_create_params())
                     assistant.apply_api_obj(api_assistant)
                     if ea and idx != -1:
-                        # assistant exists matching default name, but the instructions are different
+                        # assistant exists (matching default name), but the instructions are different
                         # this means it was updated, so we delete it and re-create it
                         assistant.created_at = ea.created_at
                         settings.assistants[idx] = assistant
