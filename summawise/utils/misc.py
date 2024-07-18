@@ -1,4 +1,4 @@
-import tempfile, traceback, pygments, sys
+import tempfile, traceback, sys
 from datetime import datetime
 from dataclasses import is_dataclass, fields
 from importlib import metadata
@@ -6,17 +6,8 @@ from typing import Any, Optional, Callable, Union, Tuple, Set, Dict, List
 from pathlib import Path
 from packaging.version import Version
 from packaging.version import Version
-from whats_that_code.election import guess_language_all_methods
-from pygments.lexers import TextLexer, get_lexer_by_name
-from pygments.lexers import guess_lexer as pygments_guess_lexer
-from pygments.lexer import Lexer
-from pygments.formatter import Formatter
-from pygments.formatters import  TerminalFormatter
-from pygments.util import ClassNotFound
-from prompt_toolkit.document import Document
-from prompt_toolkit.validation import Validator, ValidationError
-from .errors import ValueTypeError
-from .data import HashAlg
+from ..errors import ValueTypeError
+from ..data import HashAlg
 
 package_name = lambda: __name__.split('.')[0]
 utc_now = lambda: datetime.utcnow()
@@ -27,40 +18,6 @@ class Singleton(type):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
-
-class NumericChoiceValidator(Validator):
-
-    def __init__(self, valid_choices: List[int]):
-        self.valid_choices = valid_choices
-
-    def validate(self, document: Document):
-        try:
-            value = int(document.text)
-            if value not in self.valid_choices:
-                raise ValidationError(
-                    message="That number isn't a valid choice.",
-                    cursor_position=len(document.text)
-                )
-        except ValueError:
-            raise ValidationError(
-                message="Input the number corresponding with your choice.",
-                cursor_position=len(document.text)
-            )
-
-class ChoiceValidator(Validator):
-
-    def __init__(self, valid_choices: List[str], allow_empty: bool = False):
-        self.valid_choices = valid_choices
-        if allow_empty:
-            self.valid_choices.append("")
-
-    def validate(self, document: Document):
-        choice = document.text # input as a string
-        if choice not in self.valid_choices:
-            raise ValidationError(
-                message = "The choice you have input is invalid.",
-                cursor_position = len(document.text)
-            )
 
 def get_summawise_dir() -> Path:
     temp_dir = Path(tempfile.gettempdir())
@@ -174,20 +131,6 @@ def convert_datetimes(
             output[key] = value
     return output
 
-def try_parse_int(value: str, default: Optional[int] = None) -> Optional[int]:
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return default
-
-def calculate_hash(
-    _input: Union[Path, str, bytes], 
-    algorithm: HashAlg = HashAlg.SHA3_256,
-    intdigest: bool = False
-) -> Union[str, int]:
-    assert_type(_input, (bytes, str, Path))
-    return algorithm.calculate(_input, intdigest)
-
 def ex_to_str(ex: Exception, append = "", include_traceback: bool = True) -> str:
     """
     Returns a formatted string representation of the given exception.
@@ -208,22 +151,26 @@ def ex_to_str(ex: Exception, append = "", include_traceback: bool = True) -> str
 
     return strval
 
-def guess_lexer(code: str) -> Optional[Lexer]:
-    language_name = guess_language_all_methods(code)
-    if language_name:
-        try:
-            return get_lexer_by_name(language_name)
-        except ClassNotFound:
-            pass
-    try:
-        return pygments_guess_lexer(code)
-    except Exception:
-        pass
+def try_parse_int(value: str, default: Optional[int] = None) -> Optional[int]:
+    """
+    Tries to parse the input value as an integer.
 
-def highlight_code(code: str, lexer: Optional[Lexer] = None, formatter: Optional[Formatter] = None):
-    if lexer is None:
-        lexer = guess_lexer(code) or TextLexer()
-    if formatter is None:
-        formatter = TerminalFormatter()
-    highlighted_code = pygments.highlight(code, lexer, formatter)
-    return highlighted_code
+    Parameters:
+        value (str): The value to be parsed as an integer.
+        default (Optional[int]): The default value to return if parsing fails. Default is None.
+
+    Returns:
+        Optional[int]: The parsed integer value if successful, or the default value if parsing fails.
+    """
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+def calculate_hash(
+    _input: Union[Path, str, bytes], 
+    algorithm: HashAlg = HashAlg.SHA3_256,
+    intdigest: bool = False
+) -> Union[str, int]:
+    assert_type(_input, (bytes, str, Path))
+    return algorithm.calculate(_input, intdigest)
