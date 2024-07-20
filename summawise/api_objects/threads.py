@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Iterable
 from openai.types.beta import Thread as APIThread
@@ -19,9 +19,9 @@ class Thread(BaseApiObj):
 
 class ThreadList(ApiObjList[Thread]):
 
-    def __init__(self, assistants: Iterable[Thread] = [], **kwargs):
-        super().__init__(assistants, cls = Thread, **kwargs)
+    def __init__(self, threads: Iterable[Thread] = [], **kwargs):
+        super().__init__(threads, cls = Thread, **kwargs)
 
     @staticmethod
-    def from_dict_list(assistants: Iterable[Thread], **kwargs) -> "ThreadList": # type: ignore
-        return ApiObjList.from_dict_list(assistants, cls = Assistant, **kwargs) # type: ignore
+    def from_dict_list(threads: Iterable[Thread], **kwargs) -> "ThreadList": # type: ignore
+        return ApiObjList.from_dict_list(threads, cls = Thread, **kwargs) # type: ignore

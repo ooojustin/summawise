@@ -10,17 +10,18 @@ from . import utils, ai
 from .utils import Singleton, ChoiceValidator
 from .data import DataMode
 from .files import utils as FileUtils
-from .api_objects import DEFAULT_ASSISTANTS, DEFAULT_MODEL, Assistant, AssistantList
+from .api_objects import *
     
 @dataclass
 class Settings(metaclass = Singleton):
     api_key: str
     assistant_id: str = field(repr = False) # NOTE(justin): deprecated in version 0.3.0
-    assistants: AssistantList
     model: str
     compression: bool
     data_mode: DataMode
     code_style: str
+    assistants: AssistantList
+    threads: ThreadList
 
     DEPRECATED_FIELDS: ClassVar[Set[str]] = {"assistant_id"}
     DEFAULT_MODEL: ClassVar[str] = DEFAULT_MODEL
@@ -51,9 +52,13 @@ class Settings(metaclass = Singleton):
         assistants = data.pop("assistants", [])
         assistants = AssistantList.from_dict_list(assistants)
 
+        threads = data.pop("threads", [])
+        threads = ThreadList.from_dict_list(threads)
+
         settings = Settings(
             assistant_id = assistant_id,
             assistants = assistants,
+            threads = threads,
             model = data.pop("model", Settings.DEFAULT_MODEL),
             compression = data.pop("compression", Settings.DEFAULT_COMPRESSION),
             code_style = data.pop("code_style", Settings.DEFAULT_CODE_STYLE),
@@ -78,6 +83,7 @@ class Settings(metaclass = Singleton):
     def to_dict(self) -> Dict[str, Any]:
         data = utils.asdict_exclude(self, Settings.DEPRECATED_FIELDS)
         data["assistants"] = self.assistants.to_dict_list()
+        data["threads"] = self.threads.to_dict_list()
         data["data_mode"] = self.data_mode.value
         return data
 
@@ -172,6 +178,7 @@ class Settings(metaclass = Singleton):
             model = model, 
             assistant_id = "", # NOTE(justin): deprecated in version 0.3.0
             assistants = AssistantList(assistants),
+            threads = ThreadList(),
             compression = Settings.DEFAULT_COMPRESSION,
             code_style = style,
             data_mode = Settings.DEFAULT_DATA_MODE,
