@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Iterable, Callable, TypeVar, Tuple, Nam
 from datetime import datetime, timezone
 from dataclasses import dataclass, asdict, field
 from . import utils
+from .utils import ApiObjList
 from .data import HashAlg
 from .errors import MultipleAssistantsFoundError, MissingSortKeyError
 from openai.types.beta import Assistant as APIAssistant
@@ -61,89 +62,11 @@ class Assistant:
         self.temperature = obj.temperature
         self.created_at = datetime.fromtimestamp(obj.created_at, timezone.utc)
 
-class AssistantList(List[Assistant]):
-
-    def __init__(
-        self, 
-        assistants: Iterable[Assistant] = [], 
-        sort: bool = False,
-        key: Optional[Callable[[Assistant], T]] = None,
-        reverse: bool = False
-    ):
-        if not sort:
-            # sort by "created_at" by default (consistency allows use of index as identifier)
-            assistants = sorted(assistants, key = lambda a: a.created_at) # type: ignore
-            super().__init__(assistants)
-            return
-
-        if not key or not callable(key):
-            raise MissingSortKeyError("Can't initialize 'AssistantList' in sorted order without callable key.")
-
-        sorted_assistants = sorted(assistants, key = key, reverse = reverse) # type: ignore
-        super().__init__(sorted_assistants)
-
-    def to_dict_list(self) -> List[dict]:
-        return [a.to_dict() for a in self]
+class AssistantList(ApiObjList[Assistant]):
 
     @staticmethod
-    def from_dict_list(objects: List[dict], **kwargs) -> "AssistantList":
-        assistants = [Assistant(**obj) for obj in objects]
-        return AssistantList(assistants, **kwargs)
-
-    def list_by_name(self, name: str, case_sensitive: bool = False) -> List[Assistant]:
-        t = lambda s: s if case_sensitive else s.lower() # transform func
-        return [assistant for assistant in self if t(assistant.name) == t(name)]
-
-    def get_by_name(self, name: str, default: Optional[Assistant] = None, case_sensitive: bool = False) -> Optional[Assistant]:
-        assistants = self.list_by_name(name, case_sensitive = case_sensitive)
-        if len(assistants) == 0:
-            return default
-        if len(assistants) > 1:
-            raise MultipleAssistantsFoundError("name", name)
-        return assistants[0]
-
-    def get_by_id(self, id: str) -> Tuple[Optional[Assistant], int]:
-        for idx, assistant in enumerate(self):
-            if assistant.id == id:
-                return assistant, idx
-        return None, -1
-    
-    def get(self, identifier: str) -> Tuple[Optional[Assistant], int]:
-        """
-        Get an assistant from an identifier.
-
-        This method retrieves an assistant object based on the provided identifier. The identifier can be one of the following:
-        - API ID: If the identifier starts with 'asst_', it is treated as an API ID and the assistant is retrieved using this ID.
-        - Assistant name: If the identifier is a valid assistant name, the assistant is retrieved based on the name.
-        - Menu ID: If the identifier is numeric, it retrieves the assistant associated with that number in the 'list' command.
-
-        Parameters:
-            identifier (str): The identifier used to retrieve the assistant.
-
-        Returns:
-            Tuple[Optional[Assistant], int]: A tuple containing the retrieved assistant object and its index in the list of assistants. Returns (None, -1) if not found.
-        """
-        idx = -1
-
-        if identifier.startswith("asst_"):
-            _, idx = self.get_by_id(identifier)
-            if idx == -1:
-                return None, -1
-
-        if idx == -1:
-            assistant = self.get_by_name(identifier)
-            if assistant:
-                _, idx = self.get_by_id(assistant.id)
-
-        if idx == -1:
-            idx = utils.try_parse_int(identifier)
-            idx = -1 if idx is None else idx - 1
-
-        if idx < 0 or idx > len(self) - 1:
-            return None, -1
-
-        assistant = self[idx]
-        return assistant, idx
+    def from_dict_list(objects: List[dict], **kwargs) -> "AssistantList": # type: ignore
+        return ApiObjList.from_dict_list(objects, Assistant, **kwargs) # type: ignore
 
 class ConversationInit(NamedTuple):
     user_msg: str
