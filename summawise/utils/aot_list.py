@@ -8,6 +8,9 @@ class ApiObjItem(Protocol):
     name: str
     created_at: datetime
 
+    def to_dict(self) -> dict:
+        ...
+
 AOT = TypeVar("AOT", bound = ApiObjItem)
 T = TypeVar("T")
 

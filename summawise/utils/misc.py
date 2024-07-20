@@ -1,6 +1,6 @@
 import tempfile, traceback, sys
 from datetime import datetime
-from dataclasses import is_dataclass, fields
+from dataclasses import dataclass, asdict, is_dataclass, fields
 from importlib import metadata
 from typing import Any, Optional, Callable, Union, Tuple, Set, Dict
 from pathlib import Path
@@ -8,9 +8,16 @@ from packaging.version import Version
 from packaging.version import Version
 from ..errors import ValueTypeError
 from ..data import HashAlg
+from .. import utils
 
 package_name = lambda: __name__.split('.')[0]
 utc_now = lambda: datetime.utcnow()
+
+@dataclass
+class BaseApiObj:
+    def to_dict(self) -> dict:
+        obj = asdict(self)
+        return utils.convert_datetimes(obj, converter = utils.converter_ts_int)
 
 class Singleton(type):
     _instances = {}

@@ -1,9 +1,9 @@
 import warnings
 from typing import Dict, List, Optional, TypeVar, NamedTuple, Iterable
 from datetime import datetime, timezone
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, field
 from . import utils
-from .utils import ApiObjList
+from .utils import ApiObjList, BaseApiObj
 from .data import HashAlg
 from openai.types.beta import Assistant as APIAssistant
 
@@ -12,7 +12,7 @@ T = TypeVar('T')
 DEFAULT_MODEL = "gpt-3.5-turbo"
 
 @dataclass
-class Assistant:
+class Assistant(BaseApiObj):
     id: str = ""
     name: str = ""
     instructions: str = ""
@@ -43,10 +43,6 @@ class Assistant:
         if not self.name: missing_field_warning("name")
         if not self.instructions: missing_field_warning("instructions")
 
-    def to_dict(self) -> dict:
-        obj = asdict(self)
-        return utils.convert_datetimes(obj, converter = utils.converter_ts_int)
-    
     def to_create_params(self) -> dict:
         return utils.asdict_exclude(self, {"id", "created_at"})
 
