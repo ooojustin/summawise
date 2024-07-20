@@ -14,8 +14,9 @@ from ..data import DataUnit
 
 @click.command()
 @click.argument("user_input", nargs = -1)
+@click.option("-tn", "--thread_name", help = "The name of the thread. [Optional: can't be restored if not specified.]")
 @click.pass_context
-def scan(ctx: click.Context, user_input: Tuple[str, ...]):
+def scan(ctx: click.Context, user_input: Tuple[str, ...], thread_name: str):
     """Scan and process the given input (URL or file path), and offer an interactive prompt to inquire about the vectorized data."""
     settings = Settings() # type: ignore
     FileCache.init()
