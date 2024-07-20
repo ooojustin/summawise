@@ -4,7 +4,7 @@ from typing import Tuple, Dict, Optional
 from prompt_toolkit import prompt
 from pathlib import Path
 from .. import ai, utils
-from ..assistants import Assistant, CONVERSATION_INITS, ConversationInit
+from ..api_objects import Assistant, CONVERSATION_INITS, ConversationInit
 from ..settings import Settings
 from ..web import process_url
 from ..files.processing import process_file, process_dir

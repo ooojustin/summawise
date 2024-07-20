@@ -10,7 +10,7 @@ from . import utils, ai
 from .utils import Singleton, ChoiceValidator
 from .data import DataMode
 from .files import utils as FileUtils
-from .assistants import DEFAULT_ASSISTANTS, DEFAULT_MODEL, Assistant, AssistantList
+from .api_objects import DEFAULT_ASSISTANTS, DEFAULT_MODEL, Assistant, AssistantList
     
 @dataclass
 class Settings(metaclass = Singleton):

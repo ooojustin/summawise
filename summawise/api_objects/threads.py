@@ -2,8 +2,8 @@ from dataclasses import dataclass, asdict, field
 from datetime import datetime
 from typing import Iterable
 from openai.types.beta import Thread as APIThread
-from . import utils, ai
-from .utils import ApiObjList, BaseApiObj
+from .. import utils, ai
+from .generic import ApiObjList, BaseApiObj
 
 @dataclass
 class Thread(BaseApiObj):

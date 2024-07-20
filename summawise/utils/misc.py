@@ -13,12 +13,6 @@ from .. import utils
 package_name = lambda: __name__.split('.')[0]
 utc_now = lambda: datetime.utcnow()
 
-@dataclass
-class BaseApiObj:
-    def to_dict(self) -> dict:
-        obj = asdict(self)
-        return utils.convert_datetimes(obj, converter = utils.converter_ts_int)
-
 class Singleton(type):
     _instances = {}
     def __call__(cls, *args, **kwargs):
