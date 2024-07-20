@@ -1,11 +1,10 @@
 import warnings
-from typing import Dict, List, Optional, Iterable, Callable, TypeVar, Tuple, NamedTuple
+from typing import Dict, List, Optional, TypeVar, NamedTuple, Iterable
 from datetime import datetime, timezone
 from dataclasses import dataclass, asdict, field
 from . import utils
 from .utils import ApiObjList
 from .data import HashAlg
-from .errors import MultipleAssistantsFoundError, MissingSortKeyError
 from openai.types.beta import Assistant as APIAssistant
 
 T = TypeVar('T')
@@ -64,9 +63,12 @@ class Assistant:
 
 class AssistantList(ApiObjList[Assistant]):
 
+    def __init__(self, assistants: Iterable[Assistant] = [], **kwargs):
+        super().__init__(assistants, cls = Assistant, **kwargs)
+
     @staticmethod
-    def from_dict_list(objects: List[dict], **kwargs) -> "AssistantList": # type: ignore
-        return ApiObjList.from_dict_list(objects, Assistant, **kwargs) # type: ignore
+    def from_dict_list(assistants: Iterable[Assistant], **kwargs) -> "AssistantList": # type: ignore
+        return ApiObjList.from_dict_list(assistants, cls = Assistant, **kwargs) # type: ignore
 
 class ConversationInit(NamedTuple):
     user_msg: str

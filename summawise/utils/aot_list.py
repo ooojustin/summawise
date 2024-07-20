@@ -1,6 +1,7 @@
-from typing import List, Set, Tuple, Iterable, Optional, Callable, TypeVar, ClassVar, Generic, Protocol
+from typing import  List, Set, Tuple, Iterable, Optional, Callable, TypeVar, ClassVar, Generic, Protocol
 from datetime import datetime
 from .. import utils
+from ..errors import MultipleObjectsFoundError, MissingSortKeyError
 
 class ApiObjItem(Protocol):
     id: str
@@ -16,11 +17,13 @@ class ApiObjList(List[AOT], Generic[AOT]):
 
     def __init__(
         self, 
-        items: Iterable[T] = [], 
+        items: Iterable[AOT] = [], 
         sort: bool = False,
         key: Optional[Callable[[AOT], T]] = None,
-        reverse: bool = False
-    ):
+        reverse: bool = False,
+        cls: Optional[Callable[..., AOT]] = None,
+    ):  
+        self._cls = cls
 
         if not sort:
             # sort by "created_at" by default
@@ -29,7 +32,7 @@ class ApiObjList(List[AOT], Generic[AOT]):
             return
 
         if not key or not callable(key):
-            raise ValueError("Can't initialize 'ListWrapper' in sorted order without callable key.")
+            raise MissingSortKeyError(f"Can't initialize '{self.class_name}' in sorted order without callable key.")
 
         sorted_items = sorted(items, key=key, reverse=reverse)  # type: ignore
         super().__init__(sorted_items)
@@ -40,7 +43,7 @@ class ApiObjList(List[AOT], Generic[AOT]):
     @staticmethod
     def from_dict_list(objects: List[dict], cls: Callable[..., AOT], **kwargs) -> "ApiObjList[AOT]":
         items = [cls(**obj) for obj in objects]
-        return ApiObjList(items, **kwargs)
+        return ApiObjList(items, cls = cls, **kwargs)
 
     def list_by_name(self, name: str, case_sensitive: bool = False) -> List[T]:
         t = lambda s: s if case_sensitive else s.lower()  # transform func
@@ -51,7 +54,8 @@ class ApiObjList(List[AOT], Generic[AOT]):
         if len(items) == 0:
             return default
         if len(items) > 1:
-            raise ValueError(f"Multiple items found with the name: {name}")
+            assert self._cls
+            raise MultipleObjectsFoundError(self.class_name, "name", name)
         return items[0]
 
     def get_by_id(self, id: str) -> Tuple[Optional[AOT], int]:
@@ -67,13 +71,13 @@ class ApiObjList(List[AOT], Generic[AOT]):
         This method retrieves an item object based on the provided identifier. The identifier can be one of the following:
         - API ID: If the identifier string seems to be an API ID, it is treated as such and the item is retrieved using this ID.
         - Item name: If the identifier is a valid item name, the item is retrieved based on the name.
-        - Menu ID: If the identifier is numeric, it retrieves the item associated with that number in the 'list' command.
+        - Menu ID: If the identifier is numeric, it retrieves the item associated with that number in the 'list' command. (index + 1)
 
         Parameters:
             identifier (str): The identifier used to retrieve the item.
 
         Returns:
-            Tuple[Optional[T], int]: A tuple containing the retrieved item object and its index in the list of items. Returns (None, -1) if not found.
+            Tuple[Optional[AOT], int]: A tuple containing the retrieved API object representation and its index in the list of items. Returns (None, -1) if not found.
         """
         idx = -1
 
@@ -96,3 +100,7 @@ class ApiObjList(List[AOT], Generic[AOT]):
 
         item = self[idx]
         return item, idx
+    
+    @property
+    def class_name(self):
+        return self._cls.__name__ if self._cls else "Unknown"
