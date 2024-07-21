@@ -1,7 +1,7 @@
 import click
 from click import types as ctypes
 from typing import Optional
-from .. import ai, utils
+from .. import ai
 from ..api_objects import Assistant
 from ..settings import Settings
 from ..data import HashAlg

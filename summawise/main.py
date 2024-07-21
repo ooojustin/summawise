@@ -1,6 +1,6 @@
 import click, sys
 from .utils import get_version
-from .commands import scan, assistant
+from .commands import assistant, scan, thread
 from .settings import Settings
 
 VERSION = get_version()
@@ -18,6 +18,7 @@ def cli(ctx: click.Context, debug: bool):
 def register_commands():
     cli.add_command(scan)
     cli.add_command(assistant)
+    cli.add_command(thread)
 
 def main():
     Settings.init()
