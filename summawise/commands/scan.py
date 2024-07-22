@@ -163,7 +163,7 @@ def scan(ctx: click.Context, user_input: Tuple[str, ...], thread_name: str):
     print("\nYou can now ask questions about the content. Type 'exit' to quit.")
     while True:
         input_str = prompt("\nyou > ")
-        conditional_exit(input_str)
+        utils.conditional_exit(input_str)
         try:
             ai.get_thread_response(thread.id, assistant.id, input_str, auto_print = True)
         except Exception as ex:
@@ -171,7 +171,7 @@ def scan(ctx: click.Context, user_input: Tuple[str, ...], thread_name: str):
 
 def process_input(user_input: str) -> ai.Resources:
     """Takes user input, attempts to return OpenAI VectorStore ID after processing data."""
-    conditional_exit(user_input)
+    utils.conditional_exit(user_input)
 
     path = Path(user_input)
     if path.exists():
@@ -184,10 +184,3 @@ def process_input(user_input: str) -> ai.Resources:
         return process_url(user_input)
 
     raise NotSupportedError()
-
-def conditional_exit(user_input: str) -> None:
-    """Conditionally exit the program based on the users input."""
-    if user_input.lower() in ["exit", "quit", ":q"]:
-        if user_input == ":q": 
-            print("They should call you Vim Diesel.") # NOTE(justin): this is here to stay
-        sys.exit()

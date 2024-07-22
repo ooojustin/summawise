@@ -190,3 +190,10 @@ def calculate_hash(
     """
     assert_type(_input, (bytes, str, Path))
     return algorithm.calculate(_input, intdigest)
+
+def conditional_exit(user_input: str) -> None:
+    """Conditionally exit the program based on the users input."""
+    if user_input.lower() in ["exit", "quit", ":q"]:
+        if user_input == ":q": 
+            print("They should call you Vim Diesel.") # NOTE(justin): this is here to stay
+        sys.exit()
