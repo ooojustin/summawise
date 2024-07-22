@@ -3,8 +3,9 @@ from openai.types.beta import VectorStore
 from typing import Tuple, Dict, Optional
 from prompt_toolkit import prompt
 from pathlib import Path
+from datetime import datetime, timezone
 from .. import ai, utils
-from ..assistants import Assistant, CONVERSATION_INITS, ConversationInit
+from ..api_objects import Assistant, Thread, CONVERSATION_INITS, ConversationInit
 from ..settings import Settings
 from ..web import process_url
 from ..files.processing import process_file, process_dir
@@ -14,8 +15,9 @@ from ..data import DataUnit
 
 @click.command()
 @click.argument("user_input", nargs = -1)
+@click.option("-tn", "--thread_name", help = "The name of the thread. [Optional: can't be restored if not specified.]", default = "")
 @click.pass_context
-def scan(ctx: click.Context, user_input: Tuple[str, ...]):
+def scan(ctx: click.Context, user_input: Tuple[str, ...], thread_name: str):
     """Scan and process the given input (URL or file path), and offer an interactive prompt to inquire about the vectorized data."""
     settings = Settings() # type: ignore
     FileCache.init()
@@ -54,6 +56,22 @@ def scan(ctx: click.Context, user_input: Tuple[str, ...]):
         print(f"An unknown occurred while processing input: invalid VectorStore ID: {utils.ex_to_str(ex, include_traceback = debug)}")
         return
 
+    # make sure thread name isn't already taken
+    if thread_name:
+        # allow user to fix thread name if it's already taken
+        thread = settings.threads.get_by_name(thread_name)
+        if thread:
+            print("The thread name you provided has already been used. Please select a different name.")
+            taken_names = [t.name for t in settings.threads]
+            thread_name = prompt("Thread name: ", validator = utils.ChoiceValidator(taken_names, is_blacklist = True, invalid_message = "Thread name is already taken.", case_sensitive = False))
+            utils.delete_lines(2)
+
+        if not thread_name:
+            print("No new thread name provided. Thread will not be saved.")
+
+    if thread_name:
+        print(f"Thread will be saved: {thread_name}")
+
     assistant: Assistant = settings.assistants[0]
     if len(settings.assistants) > 1:
         # list assistant choices, map numeric index to name
@@ -68,7 +86,7 @@ def scan(ctx: click.Context, user_input: Tuple[str, ...]):
         assistant = assistant_choices[choice]
 
         # remove assistant selection menu, output valid choice
-        utils.delete_lines(len(assistant_choices) + 2)
+        utils.delete_lines(len(assistant_choices) + 1)
         print(f"Using selected assistant: {assistant.name}")
 
     # verify vector store validity w/ openai, output some generic info
@@ -106,15 +124,28 @@ def scan(ctx: click.Context, user_input: Tuple[str, ...]):
 
     # create thread for this conversation
     try:
-        thread = ai.create_thread(
+        api_thread = ai.create_thread(
             resources,
             file_search = assistant.file_search,
             code_interpreter = assistant.interpret_code
         )
-        print(f"Thread created with ID: {thread.id}")
+        print(f"Thread created with ID: {api_thread.id}")
     except Exception as ex:
         print(f"Error creating thread: {utils.ex_to_str(ex, include_traceback = debug)}")
         return
+
+    # create internal representation of the thread (simplified)
+    thread = Thread(
+        id = api_thread.id, 
+        name = thread_name,
+        assistant = (assistant.name, assistant.id),
+        created_at = datetime.fromtimestamp(api_thread.created_at, timezone.utc) 
+    )
+
+    # saved thread if a name was provided to identify it (so it can be restored later)
+    if len(thread.name):
+        settings.threads.append(thread)
+        settings.save()
 
     # initialize the conversation with a summary
     try:
@@ -132,7 +163,7 @@ def scan(ctx: click.Context, user_input: Tuple[str, ...]):
     print("\nYou can now ask questions about the content. Type 'exit' to quit.")
     while True:
         input_str = prompt("\nyou > ")
-        conditional_exit(input_str)
+        utils.conditional_exit(input_str)
         try:
             ai.get_thread_response(thread.id, assistant.id, input_str, auto_print = True)
         except Exception as ex:
@@ -140,7 +171,7 @@ def scan(ctx: click.Context, user_input: Tuple[str, ...]):
 
 def process_input(user_input: str) -> ai.Resources:
     """Takes user input, attempts to return OpenAI VectorStore ID after processing data."""
-    conditional_exit(user_input)
+    utils.conditional_exit(user_input)
 
     path = Path(user_input)
     if path.exists():
@@ -153,10 +184,3 @@ def process_input(user_input: str) -> ai.Resources:
         return process_url(user_input)
 
     raise NotSupportedError()
-
-def conditional_exit(user_input: str) -> None:
-    """Conditionally exit the program based on the users input."""
-    if user_input.lower() in ["exit", "quit", ":q"]:
-        if user_input == ":q": 
-            print("They should call you Vim Diesel.") # NOTE(justin): this is here to stay
-        sys.exit()

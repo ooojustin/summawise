@@ -247,6 +247,9 @@ def create_assistant(
 def get_assistant(id: str) -> Assistant:
     return Client.beta.assistants.retrieve(id)
 
+def get_thread(id: str) -> Thread:
+    return Client.beta.threads.retrieve(id)
+
 def create_thread(resources: Resources, file_search: bool = False, code_interpreter: bool = False) -> Thread:
     # https://platform.openai.com/docs/api-reference/threads/createThread#threads-createthread-tool_resources
 

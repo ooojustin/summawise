@@ -13,12 +13,6 @@ from .. import utils
 package_name = lambda: __name__.split('.')[0]
 utc_now = lambda: datetime.utcnow()
 
-@dataclass
-class BaseApiObj:
-    def to_dict(self) -> dict:
-        obj = asdict(self)
-        return utils.convert_datetimes(obj, converter = utils.converter_ts_int)
-
 class Singleton(type):
     _instances = {}
     def __call__(cls, *args, **kwargs):
@@ -196,3 +190,10 @@ def calculate_hash(
     """
     assert_type(_input, (bytes, str, Path))
     return algorithm.calculate(_input, intdigest)
+
+def conditional_exit(user_input: str) -> None:
+    """Conditionally exit the program based on the users input."""
+    if user_input.lower() in ["exit", "quit", ":q"]:
+        if user_input == ":q": 
+            print("They should call you Vim Diesel.") # NOTE(justin): this is here to stay
+        sys.exit()

@@ -1,7 +1,14 @@
+from dataclasses import dataclass, asdict
 from typing import  List, Set, Tuple, Iterable, Optional, Callable, TypeVar, ClassVar, Generic, Protocol
 from datetime import datetime
 from .. import utils
 from ..errors import MultipleObjectsFoundError, MissingSortKeyError
+
+@dataclass
+class BaseApiObj:
+    def to_dict(self) -> dict:
+        obj = asdict(self)
+        return utils.convert_datetimes(obj, converter = utils.converter_ts_int)
 
 class ApiObjItem(Protocol):
     id: str
