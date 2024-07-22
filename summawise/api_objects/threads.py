@@ -1,14 +1,15 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Iterable
+from typing import Iterable, Tuple
 from openai.types.beta import Thread as APIThread
 from .. import utils, ai
 from .generic import ApiObjList, BaseApiObj
 
 @dataclass
 class Thread(BaseApiObj):
-    id: str = ""
-    name: str = ""
+    id: str
+    name: str
+    assistant: Tuple[str, str] # name, id
     created_at: datetime = field(default_factory = utils.utc_now)
 
     def get_api_obj(self) -> APIThread:

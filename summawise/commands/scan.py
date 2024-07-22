@@ -137,7 +137,8 @@ def scan(ctx: click.Context, user_input: Tuple[str, ...], thread_name: str):
     # create internal representation of the thread (simplified)
     thread = Thread(
         id = api_thread.id, 
-        name = thread_name, 
+        name = thread_name,
+        assistant = (assistant.name, assistant.id),
         created_at = datetime.fromtimestamp(api_thread.created_at, timezone.utc) 
     )
 
