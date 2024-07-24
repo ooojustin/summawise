@@ -252,23 +252,9 @@ def get_thread(id: str) -> Thread:
 
 def create_thread(resources: Resources, file_search: bool = False, code_interpreter: bool = False) -> Thread:
     # https://platform.openai.com/docs/api-reference/threads/createThread#threads-createthread-tool_resources
-
-    # TODO(justin): find a clever way to determine which resources to use in the case where limits apply
-    # this may (temporarily, at least) involve letting the user select which files are most important to include
-    file_id_max_count = 20 # enforced by OpenAI
-    file_ids = resources.file_ids
-    if code_interpreter and len(file_ids) > file_id_max_count:
-        # example of trying to analyze summawise codebase in v0.4.0 dev,
-        # prior to applying the limit client side: https://pastebin.com/raw/rPFmju9D
-        file_ids = file_ids[:file_id_max_count]
-        print((
-            f"Note: OpenAI currently enforces a limit of {file_id_max_count} files when using the code interpreter tool.\n"
-            f"Using {len(file_ids)}/{len(resources.file_ids)} available file IDs."
-        ))
-
     tool_resources = ToolResources(
         file_search = {"vector_store_ids": resources.vector_store_ids}, 
-        code_interpreter = {"file_ids": file_ids}
+        # code_interpreter = {"file_ids": file_ids}
     )
     if not file_search:
         del tool_resources["file_search"]
