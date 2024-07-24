@@ -129,7 +129,8 @@ def scan(ctx: click.Context, user_input: Tuple[str, ...], thread_name: str, send
         api_thread = ai.create_thread(
             resources,
             file_search = assistant.file_search,
-            code_interpreter = assistant.interpret_code
+            code_interpreter = assistant.interpret_code,
+            send_messages = send_messages
         )
         print(f"Thread created with ID: {api_thread.id}")
     except Exception as ex:
