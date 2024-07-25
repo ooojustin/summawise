@@ -8,8 +8,11 @@ FileCache: "FileCacheObj"
 
 def init():
     global FileCache
-    FileCache = FileCacheObj.load()
-    ai.set_file_cache(FileCache)
+    try:
+        FileCache = FileCacheObj.load()
+        ai.set_file_cache(FileCache)
+    except ModuleNotFoundError:
+        FileCacheObj.delete()
 
 class FileCacheObj(Serializable):
     """Maps file hashes to OpenAI file_ids, and support our dynamic data serialization."""
@@ -17,7 +20,7 @@ class FileCacheObj(Serializable):
     def __init__(self, cache: Dict[str, str] = {}):
         self._cache = cache
         self.settings = Settings() # type: ignore
-        self.path = utils.get_summawise_dir() / f"file_cache.{self.settings.data_mode.ext()}"
+        self.path = FileCacheObj.get_path()
 
     def set_hash_file_id(self, hash: str, file_id: str):
         self._cache[hash] = file_id
@@ -61,3 +64,13 @@ class FileCacheObj(Serializable):
             k: v for k, v in obj.items() \
             if isinstance(v, str)
         }
+
+    @staticmethod
+    def get_path():
+        settings = Settings() # type: ignore
+        return utils.get_summawise_dir() / f"file_cache.{settings.data_mode.ext()}"
+
+    @staticmethod
+    def delete():
+        path = FileCacheObj.get_path()
+        path.unlink(missing_ok = True)
