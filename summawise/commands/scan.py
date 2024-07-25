@@ -1,9 +1,10 @@
-import validators, click, requests, time, sys
+import validators, click, requests, time
 from openai.types.beta import VectorStore
 from typing import Tuple, Dict, Optional
 from prompt_toolkit import prompt
 from pathlib import Path
 from datetime import datetime, timezone
+from click import types as ctypes
 from .. import ai, utils
 from ..api_objects import Assistant, Thread, CONVERSATION_INITS, ConversationInit
 from ..settings import Settings
@@ -16,8 +17,9 @@ from ..data import DataUnit
 @click.command()
 @click.argument("user_input", nargs = -1)
 @click.option("-tn", "--thread_name", help = "The name of the thread. [Optional: can't be restored if not specified.]", default = "")
+@click.option("-sm", "--send_messages", type = ctypes.BOOL, default = "false", help = "Send content directly in messages alongside the VectorStore & FileSearch tool.\nThis increases the API cost, and is recommended to be used alongside saving/restoring threads with the '--thread_name' option for larger amounts of content such as codebases.")
 @click.pass_context
-def scan(ctx: click.Context, user_input: Tuple[str, ...], thread_name: str):
+def scan(ctx: click.Context, user_input: Tuple[str, ...], thread_name: str, send_messages: bool):
     """Scan and process the given input (URL or file path), and offer an interactive prompt to inquire about the vectorized data."""
     settings = Settings() # type: ignore
     FileCache.init()
@@ -127,7 +129,8 @@ def scan(ctx: click.Context, user_input: Tuple[str, ...], thread_name: str):
         api_thread = ai.create_thread(
             resources,
             file_search = assistant.file_search,
-            code_interpreter = assistant.interpret_code
+            code_interpreter = assistant.interpret_code,
+            send_messages = send_messages
         )
         print(f"Thread created with ID: {api_thread.id}")
     except Exception as ex:

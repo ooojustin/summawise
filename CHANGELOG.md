@@ -4,6 +4,23 @@ All notable changes to summawise will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.0] - July 24th, 2024
+
+### Added
+
+- Added new "thread" subcommand to allow users to save/restore conversations:
+  - Save a thread using the `-tn/--thread_name` option when invoking the `scan` command.
+  - List threads using `summawise thread list`
+  - Delete threads using `summawise thread delete <id>`
+  - Restore a thread using `summawise thread restore <id>`
+- New `-sm/--send_messages` option (boolean, defaults to false) will send content in messages when a thread is being created, alongside the attached vector store.
+
+### Changed
+
+- Refactored storage of API oriented objects.
+  - Internal representation of Assistants/Threads share a base class (`ApiObjItem`).
+  - Generic `ApiObjList` base class abstracts storage/retrieval of a list of `ApiObjItem` objects.
+
 ## [0.4.0] - July 18th, 2024
 
 ### Added
