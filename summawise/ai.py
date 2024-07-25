@@ -1,3 +1,4 @@
+import json, textwrap
 from typing_extensions import override
 from typing import List, Optional, NamedTuple, Dict, Set
 from pathlib import Path
@@ -7,10 +8,11 @@ from openai.types.file_object import FileObject
 from openai.types.beta import Thread, Assistant, VectorStore 
 from openai.types.beta.threads import TextContentBlock, TextDelta, Message, Text
 from openai.types.beta.threads.runs import ToolCall, ToolCallDelta
-from openai.types.beta.thread_create_params import ToolResources
+from openai.types.beta.thread_create_params import ToolResources, Message as TCPMessage
 from prompt_toolkit import ANSI, HTML, print_formatted_text as print
 from pygments.formatters import Terminal256Formatter
 from .files.cache import FileCacheObj
+from .files import utils as FileUtils
 from .settings import Settings
 from . import utils
 
@@ -21,6 +23,7 @@ FileCache: FileCacheObj
 class Resources:
     vector_store_ids: List[str] = field(default_factory = list)
     file_ids: List[str] = field(default_factory = list)
+    file_contents: Dict[Path, str] = field(default_factory = dict)
 
     @property
     def vector_store_id(self):
@@ -204,12 +207,13 @@ def create_vector_store(name: str, file_paths: List[Path]) -> Resources:
     print(f"Creating vector store with {len(file_paths)} file(s).", end = " ")
     file_infos = get_file_infos(file_paths)
     file_ids = [info.file_id for info in file_infos]
+    file_contents = {fp: FileUtils.read_str(fp) for fp in file_paths}
 
     cached_count = sum(1 for info in file_infos if info.cached)
     print(f"[{cached_count} file(s) already cached]" if cached_count > 0 else "")
 
     vector_store = create_vector_store_from_file_ids(name, file_ids)
-    return Resources([vector_store.id], file_ids)
+    return Resources([vector_store.id], file_ids, file_contents)
 
 def create_assistant(
     model: str,
@@ -250,31 +254,47 @@ def get_assistant(id: str) -> Assistant:
 def get_thread(id: str) -> Thread:
     return Client.beta.threads.retrieve(id)
 
-def create_thread(resources: Resources, file_search: bool = False, code_interpreter: bool = False) -> Thread:
+def create_thread(resources: Resources, file_search: bool = False, code_interpreter: bool = False, send_messages: bool = False) -> Thread:
     # https://platform.openai.com/docs/api-reference/threads/createThread#threads-createthread-tool_resources
 
-    # TODO(justin): find a clever way to determine which resources to use in the case where limits apply
-    # this may (temporarily, at least) involve letting the user select which files are most important to include
-    file_id_max_count = 20 # enforced by OpenAI
-    file_ids = resources.file_ids
-    if code_interpreter and len(file_ids) > file_id_max_count:
-        # example of trying to analyze summawise codebase in v0.4.0 dev,
-        # prior to applying the limit client side: https://pastebin.com/raw/rPFmju9D
-        file_ids = file_ids[:file_id_max_count]
-        print((
-            f"Note: OpenAI currently enforces a limit of {file_id_max_count} files when using the code interpreter tool.\n"
-            f"Using {len(file_ids)}/{len(resources.file_ids)} available file IDs."
-        ))
+    messages: List[TCPMessage] = []
+    if send_messages:
+        msg = TCPMessage(
+            role = "user",
+            content = textwrap.dedent(f"""
+            The following {len(resources.file_contents)} messages will contain a file path, and the contents of the file.
+            This information will be provided in the following json schema:
+            {{
+                'path': "file path",
+                'contents': "file contents"
+            }}
+            This information will be used throughout the duration of the conversation.
+        """))
+        messages.append(msg)
+
+        for path, content in resources.file_contents.items():
+            content_obj = {
+                "path": str(path),
+                "content": content
+            }
+            content = json.dumps(content_obj)
+            if len(content) > 256000:
+                # print(f"Skipping content of file {path.name}, as it exceeds the maximum length.")
+                continue
+            msg = TCPMessage(content = content, role = "user")
+            messages.append(msg)
 
     tool_resources = ToolResources(
         file_search = {"vector_store_ids": resources.vector_store_ids}, 
-        code_interpreter = {"file_ids": file_ids}
+        # code_interpreter = {"file_ids": file_ids}
     )
+
     if not file_search:
         del tool_resources["file_search"]
     if not code_interpreter:
         del tool_resources["code_interpreter"]
-    return Client.beta.threads.create(tool_resources = tool_resources)
+
+    return Client.beta.threads.create(messages = messages, tool_resources = tool_resources)
 
 def get_thread_response(thread_id: str, assistant_id: str, prompt: str, auto_print: bool = False) -> str:
     Client.beta.threads.messages.create(thread_id = thread_id, content = prompt, role = "user")
