@@ -10,10 +10,10 @@ def init():
     global FileCache
     try:
         FileCache = FileCacheObj.load()
-        ai.set_file_cache(FileCache)
     except ModuleNotFoundError:
         FileCacheObj.delete()
         FileCache = FileCacheObj.load()
+    ai.set_file_cache(FileCache)
 
 class FileCacheObj(Serializable):
     """Maps file hashes to OpenAI file_ids, and support our dynamic data serialization."""
