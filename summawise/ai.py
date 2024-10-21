@@ -1,11 +1,12 @@
-import json, textwrap
+import json
+import textwrap
 from typing_extensions import override
 from typing import List, Optional, NamedTuple, Dict, Set
 from pathlib import Path
 from dataclasses import dataclass, field
 from openai import OpenAI, AssistantEventHandler
 from openai.types.file_object import FileObject
-from openai.types.beta import Thread, Assistant, VectorStore 
+from openai.types.beta import Thread, Assistant, VectorStore
 from openai.types.beta.threads import TextContentBlock, TextDelta, Message, Text
 from openai.types.beta.threads.runs import ToolCall, ToolCallDelta
 from openai.types.beta.thread_create_params import ToolResources, Message as TCPMessage
@@ -19,19 +20,22 @@ from . import utils
 Client: OpenAI
 FileCache: FileCacheObj
 
+
 @dataclass
 class Resources:
-    vector_store_ids: List[str] = field(default_factory = list)
-    file_ids: List[str] = field(default_factory = list)
-    file_contents: Dict[Path, str] = field(default_factory = dict)
+    vector_store_ids: List[str] = field(default_factory=list)
+    file_ids: List[str] = field(default_factory=list)
+    file_contents: Dict[Path, str] = field(default_factory=dict)
 
     @property
     def vector_store_id(self):
         if not len(self.vector_store_ids):
             raise ValueError("Resources object has no vector store id.")
         elif len(self.vector_store_ids) > 1:
-            raise ValueError("Resources object has more than 1 vector store id associated with it.")
+            raise ValueError(
+                "Resources object has more than 1 vector store id associated with it.")
         return self.vector_store_ids[0]
+
 
 class EventHandler(AssistantEventHandler):
 
@@ -53,18 +57,18 @@ class EventHandler(AssistantEventHandler):
     @override
     def on_text_created(self, text: Text) -> None:
         _ = text
-        if self.auto_print: 
-            print("\nsummawise > ", end = "", flush = True)
+        if self.auto_print:
+            print("\nsummawise > ", end="", flush=True)
 
     @override
     def on_text_delta(self, delta: TextDelta, snapshot: Text) -> None:
         _ = snapshot
-        if self.auto_print: 
-            print(delta.value, end = "", flush = True)
+        if self.auto_print:
+            print(delta.value, end="", flush=True)
 
     @override
     def on_message_done(self, message: Message) -> None:
-        print(flush = True) # new line
+        print(flush=True)  # new line
         for content in message.content:
             # other possibilities: ImageFileContentBlock, ImageURLContentBlock
             if isinstance(content, TextContentBlock):
@@ -76,8 +80,9 @@ class EventHandler(AssistantEventHandler):
             return
 
         if self.auto_print:
-            print(flush = True)
-            print(HTML(f"Tool call created: <b><ansiblue>{tool_call.type}</ansiblue> <i>[ID: {tool_call.id}]</i></b>"), flush = True)
+            print(flush=True)
+            print(HTML(
+                f"Tool call created: <b><ansiblue>{tool_call.type}</ansiblue> <i>[ID: {tool_call.id}]</i></b>"), flush=True)
 
     @override
     def on_tool_call_delta(self, delta: ToolCallDelta, snapshot: ToolCall) -> None:
@@ -85,8 +90,8 @@ class EventHandler(AssistantEventHandler):
             return
 
         if delta.type == "code_interpreter" and delta.code_interpreter:
-            if self.auto_print: 
-                print(delta.code_interpreter.input or "", end = "", flush = True)
+            if self.auto_print:
+                print(delta.code_interpreter.input or "", end="", flush=True)
 
     @override
     def on_tool_call_done(self, tool_call: ToolCall) -> None:
@@ -99,7 +104,8 @@ class EventHandler(AssistantEventHandler):
         if tool_call.type == "code_interpreter":
             self.syntax_highlight_code_interpreter(tool_call)
 
-        print(HTML(f"Tool call completed: <b><ansiblue>{tool_call.type}</ansiblue> <i>[ID: {tool_call.id}]</i></b>"), flush = True)
+        print(HTML(
+            f"Tool call completed: <b><ansiblue>{tool_call.type}</ansiblue> <i>[ID: {tool_call.id}]</i></b>"), flush=True)
 
     def tool_call_completed(self, tool_call: ToolCall, completed: bool = False) -> bool:
         """
@@ -130,18 +136,19 @@ class EventHandler(AssistantEventHandler):
 
         # NOTE(justin): this func only returns True if the tool_call was marked as completed *prior* to the current invokation
         return False
-    
+
     def syntax_highlight_code_interpreter(self, tool_call: ToolCall) -> None:
         assert tool_call.type == "code_interpreter"
-        settings = Settings() # type: ignore
+        settings = Settings()  # type: ignore
         code_str = tool_call.code_interpreter.input
         if not code_str.endswith("\n"):
-            print(flush = True)
+            print(flush=True)
         code_lines = len(code_str.splitlines())
         utils.delete_lines(code_lines)
-        formatter = Terminal256Formatter(style = settings.code_style)
-        highlighted_code = utils.highlight_code(code_str, formatter = formatter)
-        print(ANSI(highlighted_code), end = "", flush = True)
+        formatter = Terminal256Formatter(style=settings.code_style)
+        highlighted_code = utils.highlight_code(code_str, formatter=formatter)
+        print(ANSI(highlighted_code), end="", flush=True)
+
 
 def init(api_key: str, verify: bool = True):
     """
@@ -162,20 +169,23 @@ def init(api_key: str, verify: bool = True):
     if "Client" in globals():
         if Client.api_key == api_key:
             return
-    
-    Client = OpenAI(api_key = api_key)
+
+    Client = OpenAI(api_key=api_key)
     if verify:
         Client.models.list()
+
 
 class FileInfo(NamedTuple):
     hash: str
     file_id: str
     cached: bool = False
 
+
 def create_file(file_path: Path) -> FileObject:
     with open(file_path, 'rb') as file:
-        file_response = Client.files.create(file = file, purpose = "assistants")
+        file_response = Client.files.create(file=file, purpose="assistants")
         return file_response
+
 
 def get_file_infos(files: List[Path]) -> List[FileInfo]:
     file_infos: List[FileInfo] = []
@@ -200,11 +210,13 @@ def get_file_infos(files: List[Path]) -> List[FileInfo]:
     FileCache.save()
     return file_infos
 
+
 def create_vector_store_from_file_ids(name: str, file_ids: List[str]) -> VectorStore:
-    return Client.beta.vector_stores.create(name = name, file_ids = file_ids)
+    return Client.beta.vector_stores.create(name=name, file_ids=file_ids)
+
 
 def create_vector_store(name: str, file_paths: List[Path]) -> Resources:
-    print(f"Creating vector store with {len(file_paths)} file(s).", end = " ")
+    print(f"Creating vector store with {len(file_paths)} file(s).", end=" ")
     file_infos = get_file_infos(file_paths)
     file_ids = [info.file_id for info in file_infos]
     file_contents = {fp: FileUtils.read_str(fp) for fp in file_paths}
@@ -215,10 +227,11 @@ def create_vector_store(name: str, file_paths: List[Path]) -> Resources:
     vector_store = create_vector_store_from_file_ids(name, file_ids)
     return Resources([vector_store.id], file_ids, file_contents)
 
+
 def create_assistant(
     model: str,
-    name: str, 
-    instructions: str, 
+    name: str,
+    instructions: str,
     file_search: bool = False,
     interpret_code: bool = False,
     respond_with_json: bool = False,
@@ -231,28 +244,31 @@ def create_assistant(
         tools.append({"type": "file_search"})
     if interpret_code:
         tools.append({"type": "code_interpreter"})
-    response_format = { "type": "json_object" } if respond_with_json else "auto"
+    response_format = {"type": "json_object"} if respond_with_json else "auto"
     assistant = Client.beta.assistants.create(
-        model = model,
-        name = name,
-        instructions = instructions,
-        tools = tools,
-        description = description,
-        metadata = { 
+        model=model,
+        name=name,
+        instructions=instructions,
+        tools=tools,
+        description=description,
+        metadata={
             "created_by": utils.package_name(),
             "version": str(utils.get_version()),
         },
-        top_p = top_p,
-        temperature = temperature,
-        response_format = response_format, # type: ignore
+        top_p=top_p,
+        temperature=temperature,
+        response_format=response_format,  # type: ignore
     )
     return assistant
+
 
 def get_assistant(id: str) -> Assistant:
     return Client.beta.assistants.retrieve(id)
 
+
 def get_thread(id: str) -> Thread:
     return Client.beta.threads.retrieve(id)
+
 
 def create_thread(resources: Resources, file_search: bool = False, code_interpreter: bool = False, send_messages: bool = False) -> Thread:
     # https://platform.openai.com/docs/api-reference/threads/createThread#threads-createthread-tool_resources
@@ -260,8 +276,8 @@ def create_thread(resources: Resources, file_search: bool = False, code_interpre
     messages: List[TCPMessage] = []
     if send_messages:
         msg = TCPMessage(
-            role = "user",
-            content = textwrap.dedent(f"""
+            role="user",
+            content=textwrap.dedent(f"""
             The following {len(resources.file_contents)} messages will contain a file path, and the contents of the file.
             This information will be provided in the following json schema:
             {{
@@ -281,33 +297,36 @@ def create_thread(resources: Resources, file_search: bool = False, code_interpre
             if len(content) > 256000:
                 # print(f"Skipping content of file {path.name}, as it exceeds the maximum length.")
                 continue
-            msg = TCPMessage(content = content, role = "user")
+            msg = TCPMessage(content=content, role="user")
             messages.append(msg)
 
     tool_resources = ToolResources(
-        file_search = {"vector_store_ids": resources.vector_store_ids}, 
+        file_search={"vector_store_ids": resources.vector_store_ids},
         # code_interpreter = {"file_ids": file_ids}
     )
 
-    if not file_search:
+    if not file_search and "file_search" in tool_resources:
         del tool_resources["file_search"]
-    if not code_interpreter:
+    if not code_interpreter and "code_interpreter" in tool_resources:
         del tool_resources["code_interpreter"]
 
-    return Client.beta.threads.create(messages = messages, tool_resources = tool_resources)
+    return Client.beta.threads.create(messages=messages, tool_resources=tool_resources)
+
 
 def get_thread_response(thread_id: str, assistant_id: str, prompt: str, auto_print: bool = False) -> str:
-    Client.beta.threads.messages.create(thread_id = thread_id, content = prompt, role = "user")
+    Client.beta.threads.messages.create(
+        thread_id=thread_id, content=prompt, role="user")
 
-    event_handler = EventHandler(auto_print = auto_print)
+    event_handler = EventHandler(auto_print=auto_print)
     with Client.beta.threads.runs.stream(
-        thread_id = thread_id,
-        assistant_id = assistant_id,
-        event_handler = event_handler
+        thread_id=thread_id,
+        assistant_id=assistant_id,
+        event_handler=event_handler
     ) as stream:
         stream.until_done()
 
     return event_handler.response_text
+
 
 def set_file_cache(file_cache: FileCacheObj):
     global FileCache
