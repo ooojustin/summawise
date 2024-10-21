@@ -5,14 +5,15 @@ from dataclasses import is_dataclass, asdict
 from .data import DataMode
 from .files import utils as FileUtils
 
-ST = TypeVar("ST", bound = "Serializable")
+ST = TypeVar("ST", bound="Serializable")
+
 
 class Serializable:
 
     def save_to_file(
-        self, 
-        file_path: Path, 
-        mode: DataMode = DataMode.JSON, 
+        self,
+        file_path: Path,
+        mode: DataMode = DataMode.JSON,
         compress: bool = False,
         pretty_json: bool = False
     ):
@@ -24,8 +25,8 @@ class Serializable:
 
     @classmethod
     def from_file(
-        cls: Type[ST], 
-        file_path: Path, 
+        cls: Type[ST],
+        file_path: Path,
         mode: DataMode = DataMode.JSON
     ) -> ST:
         if mode == DataMode.JSON:
@@ -54,7 +55,7 @@ class Serializable:
     def to_json(self, pretty: bool = False) -> str:
         try:
             obj = asdict(self) if is_dataclass(self) else self.__dict__
-            return json.dumps(obj, indent = 4 if pretty else None)
+            return json.dumps(obj, indent=4 if pretty else None)
         except Exception as ex:
             if not is_dataclass(self):
                 raise NotImplementedError(

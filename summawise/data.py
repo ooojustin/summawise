@@ -1,9 +1,12 @@
-import inspect, hashlib, xxhash
+import inspect
+import hashlib
+import xxhash
 from enum import Enum
 from typing import Any, List, Union, NamedTuple, cast
 from types import ModuleType
 from pathlib import Path
 from .errors import ValueTypeError
+
 
 class DataMode(Enum):
     JSON = "json"
@@ -19,10 +22,11 @@ class DataMode(Enum):
         except KeyError:
             raise ValueError(f"Unsupported DataMode: {self}")
 
+
 class DataUnit:
     """
     Utility class for converting sizes in bytes to human-readable string representations with appropriate units.
-    
+
     Attributes:
         B (int): Size multiplier for bytes.
         KB (int): Size multiplier for kilobytes.
@@ -50,9 +54,9 @@ class DataUnit:
         if len(DataUnit.units):
             return DataUnit.units
         units = [
-            (name, value) for name, value in inspect.getmembers(DataUnit) 
-            if not name.startswith("__") 
-            and name not in DataUnit.__excludes__ 
+            (name, value) for name, value in inspect.getmembers(DataUnit)
+            if not name.startswith("__")
+            and name not in DataUnit.__excludes__
             and not callable(value)
         ]
         units = sorted(units, key=lambda x: x[1])
@@ -78,6 +82,7 @@ class DataUnit:
             uidx += 1
         return f"{size:.2f} {units[uidx]}"
 
+
 class _HashAlg(NamedTuple):
     module: ModuleType
     function_name: str
@@ -85,6 +90,7 @@ class _HashAlg(NamedTuple):
     def init(self) -> Any:
         alg_init = getattr(self.module, self.function_name)
         return alg_init()
+
 
 class HashAlg(Enum):
     """An enumeration class representing various hashing algorithms and offering their implementation."""
@@ -98,7 +104,7 @@ class HashAlg(Enum):
 
     def calculate(
         self,
-        _input: Union[Path, str, bytes], 
+        _input: Union[Path, str, bytes],
         intdigest: bool = False
     ) -> Union[str, int]:
         """
@@ -134,7 +140,7 @@ class HashAlg(Enum):
 
         return (
             hash_obj.hexdigest() if not intdigest else
-            int.from_bytes(hash_obj.digest(), byteorder = "big")
+            int.from_bytes(hash_obj.digest(), byteorder="big")
         )
 
     @staticmethod

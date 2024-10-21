@@ -3,6 +3,7 @@ from pathlib import Path
 from ..serializable import Serializable
 from ..utils import calculate_hash
 
+
 @dataclass
 class FileMetadata(Serializable):
     hash: str
@@ -25,4 +26,4 @@ class FileMetadata(Serializable):
         last_accessed_at = stats.st_atime
 
         return cls(hash, file_path.name, str(file_path), sz_bytes,
-                   created_at, last_modified_at, last_accessed_at)    
+                   created_at, last_modified_at, last_accessed_at)

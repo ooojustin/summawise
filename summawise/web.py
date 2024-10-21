@@ -1,9 +1,11 @@
-import requests, tempfile
+import requests
+import tempfile
 from pathlib import Path
 from . import ai, youtube
 from .files.processing import process_file
 from .data import DataUnit
 from .errors import NotSupportedError
+
 
 def process_url(url: str) -> ai.Resources:
     if youtube.is_url(url):
@@ -15,7 +17,7 @@ def process_url(url: str) -> ai.Resources:
         "text/html": ".html"
     }
 
-    response = requests.head(url, allow_redirects = True)
+    response = requests.head(url, allow_redirects=True)
     response.raise_for_status()
 
     result_url = response.url
@@ -28,18 +30,19 @@ def process_url(url: str) -> ai.Resources:
             break
 
     if not content_type in valid_types:
-        raise NotSupportedError(f"\nUnsupported content type detected from HEAD request: {content_type}")
-    
+        raise NotSupportedError(
+            f"\nUnsupported content type detected from HEAD request: {content_type}")
+
     # send requst to download file from url (stream the data)
-    response = requests.get(result_url, stream = True)
+    response = requests.get(result_url, stream=True)
     response.raise_for_status()
-    
+
     # create temp file and write chunks of streamed data to disk
     extension = extensions.get(content_type, ".txt")
-    temp_file = tempfile.NamedTemporaryFile(suffix = extension, delete = False)
+    temp_file = tempfile.NamedTemporaryFile(suffix=extension, delete=False)
     try:
         temp_file_path = Path(temp_file.name)
-        for chunk in response.iter_content(chunk_size = 8 * DataUnit.KB):
+        for chunk in response.iter_content(chunk_size=8 * DataUnit.KB):
             temp_file.write(chunk)
     except Exception as ex:
         raise RuntimeError(f"Failed to write bytes to temporary file: {ex}")
@@ -48,7 +51,7 @@ def process_url(url: str) -> ai.Resources:
 
     # process the temp file, automatically delete it after
     try:
-        result = process_file(temp_file_path, delete = True)
+        result = process_file(temp_file_path, delete=True)
     finally:
         if temp_file_path.exists():
             temp_file_path.unlink()

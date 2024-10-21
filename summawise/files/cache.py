@@ -6,6 +6,7 @@ from .. import utils, ai
 
 FileCache: "FileCacheObj"
 
+
 def init():
     global FileCache
     try:
@@ -15,12 +16,13 @@ def init():
         FileCache = FileCacheObj.load()
     ai.set_file_cache(FileCache)
 
+
 class FileCacheObj(Serializable):
     """Maps file hashes to OpenAI file_ids, and support our dynamic data serialization."""
-    
+
     def __init__(self, cache: Dict[str, str] = {}):
         self._cache = cache
-        self.settings = Settings() # type: ignore
+        self.settings = Settings()  # type: ignore
         self.path = FileCacheObj.get_path()
 
     def set_hash_file_id(self, hash: str, file_id: str):
@@ -46,7 +48,7 @@ class FileCacheObj(Serializable):
     def save(self):
         data_mode = self.settings.data_mode
         compress = self.settings.compression
-        self.save_to_file(self.path, data_mode, compress, pretty_json = True)
+        self.save_to_file(self.path, data_mode, compress, pretty_json=True)
 
     @classmethod
     def from_json(cls, json_str: str) -> "FileCacheObj":
@@ -56,22 +58,22 @@ class FileCacheObj(Serializable):
         return cache
 
     def to_json(self, pretty: bool = False) -> str:
-        return json.dumps(self._cache, indent = 4 if pretty else None)
+        return json.dumps(self._cache, indent=4 if pretty else None)
 
     @staticmethod
     def filter_dict(obj: Dict[str, Any]) -> Dict[str, str]:
         """Returns a dict in which any values that aren't strings are removed."""
         return {
-            k: v for k, v in obj.items() \
+            k: v for k, v in obj.items()
             if isinstance(v, str)
         }
 
     @staticmethod
     def get_path():
-        settings = Settings() # type: ignore
+        settings = Settings()  # type: ignore
         return utils.get_summawise_dir() / f"file_cache.{settings.data_mode.ext()}"
 
     @staticmethod
     def delete():
         path = FileCacheObj.get_path()
-        path.unlink(missing_ok = True)
+        path.unlink(missing_ok=True)

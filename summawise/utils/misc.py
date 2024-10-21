@@ -1,6 +1,8 @@
-import tempfile, traceback, sys
+import tempfile
+import traceback
+import sys
 from datetime import datetime
-from dataclasses import dataclass, asdict, is_dataclass, fields
+from dataclasses import is_dataclass, fields
 from importlib import metadata
 from typing import Any, Optional, Callable, Union, Tuple, Set, Dict
 from pathlib import Path
@@ -8,21 +10,26 @@ from packaging.version import Version
 from packaging.version import Version
 from ..errors import ValueTypeError
 from ..data import HashAlg
-from .. import utils
 
-package_name = lambda: __name__.split('.')[0]
-utc_now = lambda: datetime.utcnow()
+
+def package_name(): return __name__.split('.')[0]
+def utc_now(): return datetime.utcnow()
+
 
 class Singleton(type):
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+            cls._instances[cls] = super(
+                Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
+
 
 def get_summawise_dir() -> Path:
     temp_dir = Path(tempfile.gettempdir())
     return temp_dir / "summawise"
+
 
 def fp(file_path: Path) -> Path:
     """
@@ -35,10 +42,11 @@ def fp(file_path: Path) -> Path:
             return gz_path
     return file_path
 
+
 def assert_type(value: Any, type_or_types: Union[type, Tuple[type, ...]]) -> None:
     """
     Asserts that a variable is of a given type.
-    
+
     Parameters:
         value (Any): The variable to be checked.
         type_or_types (Union[type, Tuple[type, ...]]): The type or types that the variable should be checked against.
@@ -48,9 +56,11 @@ def assert_type(value: Any, type_or_types: Union[type, Tuple[type, ...]]) -> Non
         ValueTypeError: If the variable is not of the specified type or types.
     """
     if not isinstance(type_or_types, (type, tuple)):
-        raise TypeError("Function 'assert_type' parameter 'type_or_types' must be a type, or a tuple of types.")
+        raise TypeError(
+            "Function 'assert_type' parameter 'type_or_types' must be a type, or a tuple of types.")
     elif not isinstance(value, type_or_types):
         raise ValueTypeError(value, type_or_types)
+
 
 def asdict_exclude(obj: Any, exclude: Set[str]) -> Dict[str, Any]:
     """
@@ -72,6 +82,7 @@ def asdict_exclude(obj: Any, exclude: Set[str]) -> Dict[str, Any]:
             result[f.name] = getattr(obj, f.name)
     return result
 
+
 def get_version(pkg_name: str = "") -> Version:
     """
     Retrieves the version of a specified package.
@@ -81,10 +92,11 @@ def get_version(pkg_name: str = "") -> Version:
     Returns:
         Version: An object representing the version of the specified package.
     """
-    if not pkg_name: 
+    if not pkg_name:
         pkg_name = package_name()
     version_str = metadata.version(pkg_name)
     return Version(version_str)
+
 
 def delete_lines(count: int = 1):
     """
@@ -101,12 +113,14 @@ def delete_lines(count: int = 1):
         sys.stdout.write(ERASE_LINE)
         sys.stdout.flush()
 
+
 converter_iso: Callable[[datetime], str] = lambda v: v.isoformat()
 converter_ts: Callable[[datetime], float] = lambda v: v.timestamp()
 converter_ts_int: Callable[[datetime], float] = lambda v: int(v.timestamp())
 
+
 def convert_datetimes(
-    input_dict: Dict[str, Any], 
+    input_dict: Dict[str, Any],
     converter: Callable[[datetime], Any] = converter_iso
 ) -> Dict[str, Any]:
     """
@@ -132,7 +146,8 @@ def convert_datetimes(
             output[key] = value
     return output
 
-def ex_to_str(ex: Exception, append = "", include_traceback: bool = True) -> str:
+
+def ex_to_str(ex: Exception, append="", include_traceback: bool = True) -> str:
     """
     Returns a formatted string representation of the given exception.
 
@@ -152,6 +167,7 @@ def ex_to_str(ex: Exception, append = "", include_traceback: bool = True) -> str
 
     return strval
 
+
 def try_parse_int(value: str, default: Optional[int] = None) -> Optional[int]:
     """
     Tries to parse the input value as an integer.
@@ -168,8 +184,9 @@ def try_parse_int(value: str, default: Optional[int] = None) -> Optional[int]:
     except (ValueError, TypeError):
         return default
 
+
 def calculate_hash(
-    _input: Union[Path, str, bytes], 
+    _input: Union[Path, str, bytes],
     algorithm: HashAlg = HashAlg.SHA3_256,
     intdigest: bool = False
 ) -> Union[str, int]:
@@ -191,9 +208,11 @@ def calculate_hash(
     assert_type(_input, (bytes, str, Path))
     return algorithm.calculate(_input, intdigest)
 
+
 def conditional_exit(user_input: str) -> None:
     """Conditionally exit the program based on the users input."""
     if user_input.lower() in ["exit", "quit", ":q"]:
-        if user_input == ":q": 
-            print("They should call you Vim Diesel.") # NOTE(justin): this is here to stay
+        if user_input == ":q":
+            # NOTE(justin): this is here to stay
+            print("They should call you Vim Diesel.")
         sys.exit()

@@ -2,6 +2,7 @@ from typing import List
 from prompt_toolkit.document import Document
 from prompt_toolkit.validation import Validator, ValidationError
 
+
 class NumericChoiceValidator(Validator):
 
     def __init__(self, valid_choices: List[int]):
@@ -21,10 +22,11 @@ class NumericChoiceValidator(Validator):
                 cursor_position=len(document.text)
             )
 
+
 class ChoiceValidator(Validator):
 
     def __init__(
-        self, 
+        self,
         choices: List[str],
         is_blacklist: bool = False,
         allow_empty: bool = False,
@@ -37,17 +39,18 @@ class ChoiceValidator(Validator):
         self.invalid_message = invalid_message
 
         if allow_empty:
-            self.choices.remove("") if is_blacklist else self.choices.append("")
+            self.choices.remove(
+                "") if is_blacklist else self.choices.append("")
 
         if not case_sensitive:
             self.choices = [c.lower() for c in self.choices]
 
     def validate(self, document: Document):
-        choice = document.text if self.case_sensitive else document.text.lower() # input as a string
+        # input as a string
+        choice = document.text if self.case_sensitive else document.text.lower()
         valid = choice not in self.choices if self.is_blacklist else choice in self.choices
         if not valid:
             raise ValidationError(
-                message = self.invalid_message,
-                cursor_position = len(document.text)
+                message=self.invalid_message,
+                cursor_position=len(document.text)
             )
-

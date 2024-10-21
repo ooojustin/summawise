@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Optional
 
+
 class Encoding(Enum):
     """
     Encodings supported by the chardet library, turned into an enum.
@@ -44,7 +45,7 @@ class Encoding(Enum):
     UTF_16_LE = "UTF-16 LE"
     UTF_8 = "UTF-8"
     ASCII = "ASCII"
-    
+
     @classmethod
     def from_string(cls, encoding_str) -> Optional["Encoding"]:
         """

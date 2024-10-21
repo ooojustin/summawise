@@ -11,6 +11,7 @@ T = TypeVar('T')
 
 DEFAULT_MODEL = "gpt-3.5-turbo"
 
+
 @dataclass
 class Assistant(BaseApiObj):
     id: str = ""
@@ -23,25 +24,28 @@ class Assistant(BaseApiObj):
     description: Optional[str] = None
     temperature: Optional[float] = None
     top_p: Optional[float] = None
-    created_at: datetime = field(default_factory = utils.utc_now)
+    created_at: datetime = field(default_factory=utils.utc_now)
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, Assistant):
             return NotImplemented
         return (
-            self.name == other.name and 
+            self.name == other.name and
             self.instructions == other.instructions
         )
 
     def __hash__(self) -> int:
         strval = f"{self.name}\n{self.instructions}"
-        hashval = HashAlg.XXH_64.calculate(strval, intdigest = True)
+        hashval = HashAlg.XXH_64.calculate(strval, intdigest=True)
         return int(hashval)
 
     def __post_init__(self):
-        missing_field_warning = lambda x: warnings.warn(f"'Assistant' object is missing expected field {x}.\nThis field should always be provided.", UserWarning)
-        if not self.name: missing_field_warning("name")
-        if not self.instructions: missing_field_warning("instructions")
+        def missing_field_warning(x): return warnings.warn(
+            f"'Assistant' object is missing expected field {x}.\nThis field should always be provided.", UserWarning)
+        if not self.name:
+            missing_field_warning("name")
+        if not self.instructions:
+            missing_field_warning("instructions")
 
     def to_create_params(self) -> dict:
         return utils.asdict_exclude(self, {"id", "created_at"})
@@ -57,33 +61,43 @@ class Assistant(BaseApiObj):
         self.temperature = obj.temperature
         self.created_at = datetime.fromtimestamp(obj.created_at, timezone.utc)
 
+
 class AssistantList(ApiObjList[Assistant]):
 
     def __init__(self, assistants: Iterable[Assistant] = [], **kwargs):
-        super().__init__(assistants, cls = Assistant, **kwargs)
+        super().__init__(assistants, cls=Assistant, **kwargs)
 
     @staticmethod
-    def from_dict_list(assistants: Iterable[Assistant], **kwargs) -> "AssistantList": # type: ignore
-        return ApiObjList.from_dict_list(assistants, cls = Assistant, **kwargs) # type: ignore
+    def from_dict_list(  # type: ignore
+        assistants: List[dict],
+        **kwargs
+    ) -> "AssistantList":
+        return ApiObjList.from_dict_list(  # type: ignore
+            objects=assistants,
+            cls=Assistant,
+            **kwargs
+        )
+
 
 class ConversationInit(NamedTuple):
     user_msg: str
     gpt_msg: str
 
+
 TranscriptAnalyzer: Assistant = Assistant(
-    name = "Transcript Analysis Assistant",
-    instructions = "You are an assistant that summarizes video transcripts and answers questions about them.",
-    file_search = True
+    name="Transcript Analysis Assistant",
+    instructions="You are an assistant that summarizes video transcripts and answers questions about them.",
+    file_search=True
 )
 
 CodingAssistant: Assistant = Assistant(
-    name = "Coding Assistant",
-    instructions = (
+    name="Coding Assistant",
+    instructions=(
         "You are an assistant which helps users by generating, debugging, and optimizing code snippets.\n"
         "It provides clear, well-commented code along with explanations to aid user understanding.\n"
         "\nGeneral Guidelines\n"
         "1.) Understand the Request: Ensure you fully understand the users requirements. Ask clarifying questions if needed.\n"
-        "2.) Simplicity and Clarity: Provide simple, clean, and well-documented code. Avoid overly complex solutions unless explicitly requested.\n"\
+        "2.) Simplicity and Clarity: Provide simple, clean, and well-documented code. Avoid overly complex solutions unless explicitly requested.\n"
         "3.) Explain the Code: Always include a brief explanation of the code to help the user understand how it works.\n"
         "4.) Best Practices: Follow coding best practices and conventions for the relevant programming language.\n"
         "5.) Error Handling: Include error handling where appropriate to make the code robust.\n"
@@ -96,17 +110,17 @@ CodingAssistant: Assistant = Assistant(
         "5.) Provide Explanation: Write a brief explanation of what the code does and how it works.\n"
         "6.) Optimize: If applicable, suggest optimizations or improvements."
     ),
-    file_search = True,
-    interpret_code = True
+    file_search=True,
+    interpret_code=True
 )
 
 CONVERSATION_INITS: Dict[Assistant, ConversationInit] = {
     TranscriptAnalyzer: ConversationInit(
-        "Generating summary of transcript...", 
+        "Generating summary of transcript...",
         "Please summarize the transcript."
     ),
     CodingAssistant: ConversationInit(
-        "Generating summary of codebase...", 
+        "Generating summary of codebase...",
         "Please summarize the codebase."
     )
 }
