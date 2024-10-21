@@ -12,10 +12,10 @@ from openai.types.beta.threads.runs import ToolCall, ToolCallDelta
 from openai.types.beta.thread_create_params import ToolResources, Message as TCPMessage
 from prompt_toolkit import ANSI, HTML, print_formatted_text as print
 from pygments.formatters import Terminal256Formatter
-from .files.cache import FileCacheObj
-from .files import utils as FileUtils
-from .settings import Settings
-from . import utils
+from summawise.files.cache import FileCacheObj
+from summawise.files import utils as FileUtils
+from summawise.settings import Settings
+from summawise import utils
 
 Client: OpenAI
 FileCache: FileCacheObj

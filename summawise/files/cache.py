@@ -1,8 +1,8 @@
 import json
 from typing import Optional, Dict, Any
-from ..settings import Settings
-from ..serializable import Serializable
-from .. import utils, ai
+from summawise.settings import Settings
+from summawise.serializable import Serializable
+from summawise import utils, ai
 
 FileCache: "FileCacheObj"
 

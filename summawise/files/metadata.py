@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
-from ..serializable import Serializable
-from ..utils import calculate_hash
+from summawise.serializable import Serializable
+from summawise.utils import calculate_hash
 
 
 @dataclass

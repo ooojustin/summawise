@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any, List, Union, NamedTuple, cast
 from types import ModuleType
 from pathlib import Path
-from .errors import ValueTypeError
+from summawise.errors import ValueTypeError
 
 
 class DataMode(Enum):

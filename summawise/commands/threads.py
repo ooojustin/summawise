@@ -1,7 +1,7 @@
 import click
 from prompt_toolkit import prompt
-from .. import ai, utils
-from ..settings import Settings
+from summawise import ai, utils
+from summawise.settings import Settings
 
 
 @click.group()

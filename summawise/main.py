@@ -1,8 +1,8 @@
 import click
 import sys
-from .utils import get_version
-from .commands import assistant, scan, thread
-from .settings import Settings
+from summawise.utils import get_version
+from summawise.commands import assistant, scan, thread
+from summawise.settings import Settings
 
 VERSION = get_version()
 CONTEXT_SETTINGS = {"max_content_width": sys.maxsize}

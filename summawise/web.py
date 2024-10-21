@@ -1,10 +1,10 @@
 import requests
 import tempfile
 from pathlib import Path
-from . import ai, youtube
-from .files.processing import process_file
-from .data import DataUnit
-from .errors import NotSupportedError
+from summawise import ai, youtube
+from summawise.files.processing import process_file
+from summawise.data import DataUnit
+from summawise.errors import NotSupportedError
 
 
 def process_url(url: str) -> ai.Resources:

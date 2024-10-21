@@ -2,10 +2,10 @@ import warnings
 from typing import Dict, List, Optional, TypeVar, NamedTuple, Iterable
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
-from .. import utils
-from .generic import ApiObjList, BaseApiObj
-from ..data import HashAlg
 from openai.types.beta import Assistant as APIAssistant
+from summawise import utils
+from summawise.data import HashAlg
+from summawise.api_objects.generic import ApiObjList, BaseApiObj
 
 T = TypeVar('T')
 

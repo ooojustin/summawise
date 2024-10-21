@@ -8,14 +8,14 @@ from prompt_toolkit import prompt
 from pathlib import Path
 from datetime import datetime, timezone
 from click import types as ctypes
-from .. import ai, utils
-from ..api_objects import Assistant, Thread, CONVERSATION_INITS, ConversationInit
-from ..settings import Settings
-from ..web import process_url
-from ..files.processing import process_file, process_dir
-from ..files import cache as FileCache
-from ..errors import NotSupportedError
-from ..data import DataUnit
+from summawise import ai, utils
+from summawise.api_objects import Assistant, Thread, CONVERSATION_INITS, ConversationInit
+from summawise.settings import Settings
+from summawise.web import process_url
+from summawise.files.processing import process_file, process_dir
+from summawise.files import cache as FileCache
+from summawise.errors import NotSupportedError
+from summawise.data import DataUnit
 
 
 @click.command()

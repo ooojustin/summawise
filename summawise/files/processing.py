@@ -1,8 +1,8 @@
 from pathlib import Path
-from .metadata import FileMetadata
-from . import utils as FileUtils
-from .. import ai, utils
-from ..settings import Settings
+from summawise import ai, utils
+from summawise.files.metadata import FileMetadata
+from summawise.files import utils as FileUtils
+from summawise.settings import Settings
 
 
 def process_dir(dir_path: Path, delete: bool = True) -> ai.Resources:

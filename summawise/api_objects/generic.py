@@ -1,8 +1,8 @@
 from dataclasses import dataclass, asdict
 from typing import List, Set, Tuple, Iterable, Optional, Callable, TypeVar, ClassVar, Generic, Protocol
 from datetime import datetime
-from .. import utils
-from ..errors import MultipleObjectsFoundError, MissingSortKeyError
+from summawise import utils
+from summawise.errors import MultipleObjectsFoundError, MissingSortKeyError
 
 
 @dataclass

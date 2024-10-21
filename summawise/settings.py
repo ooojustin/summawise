@@ -9,11 +9,11 @@ from pathlib import Path
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
 from pygments.styles import get_all_styles
-from . import utils, ai
-from .utils import Singleton, ChoiceValidator
-from .data import DataMode
-from .files import utils as FileUtils
-from .api_objects import *
+from summawise import utils, ai
+from summawise.utils import Singleton, ChoiceValidator
+from summawise.data import DataMode
+from summawise.files import utils as FileUtils
+from summawise.api_objects import *
 
 
 @dataclass

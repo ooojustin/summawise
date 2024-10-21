@@ -1,10 +1,10 @@
 import click
 from click import types as ctypes
 from typing import Optional
-from .. import ai
-from ..api_objects import Assistant
-from ..settings import Settings
-from ..data import HashAlg
+from summawise import ai
+from summawise.api_objects import Assistant
+from summawise.settings import Settings
+from summawise.data import HashAlg
 
 
 @click.group()

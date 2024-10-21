@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Iterable, Tuple
 from openai.types.beta import Thread as APIThread
-from .. import utils, ai
-from .generic import ApiObjList, BaseApiObj
+from summawise import utils, ai
+from summawise.api_objects.generic import ApiObjList, BaseApiObj
 
 
 @dataclass

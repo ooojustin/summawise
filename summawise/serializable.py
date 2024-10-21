@@ -2,8 +2,8 @@ import json
 from typing import TypeVar, Type
 from pathlib import Path
 from dataclasses import is_dataclass, asdict
-from .data import DataMode
-from .files import utils as FileUtils
+from summawise.data import DataMode
+from summawise.files import utils as FileUtils
 
 ST = TypeVar("ST", bound="Serializable")
 

@@ -4,11 +4,11 @@ from datetime import timedelta
 from typing import List, Dict
 from pathlib import Path
 from youtube_transcript_api import YouTubeTranscriptApi
-from . import utils, ai
-from .data import DataMode
-from .files import utils as FileUtils
-from .serializable import Serializable
-from .settings import Settings
+from summawise import utils, ai
+from summawise.data import DataMode
+from summawise.files import utils as FileUtils
+from summawise.serializable import Serializable
+from summawise.settings import Settings
 
 
 class TranscriptEntry:

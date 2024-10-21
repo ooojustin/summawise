@@ -2,10 +2,10 @@ import re
 import pickle
 import gzip
 import chardet
-from typing import TypeVar, Type, List, Optional, NamedTuple, Union
+from typing import TypeVar, Type, List, Optional, NamedTuple
 from pathlib import Path
-from .encodings import Encoding
-from ..data import DataUnit
+from summawise.files.encodings import Encoding
+from summawise.data import DataUnit
 
 T = TypeVar("T")
 
