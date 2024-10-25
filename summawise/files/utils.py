@@ -89,7 +89,8 @@ def get_encoding(file_path: Path) -> Optional[Encoding]:
 
 
 def has_parent_directory(path: Path, dir_name: str) -> bool:
-    def normalize(s): return f"/{s.strip('/\\').replace('\\', '/')}/"
+    # def normalize(s): return f"/{s.strip('/\\').replace('\\', '/')}/" # NOTE(justin): SyntaxError reference: https://pastebin.com/ATPVSDH5
+    def normalize(s): return "/" + s.strip('/\\').replace('\\', '/') + "/"
     dir_name = normalize(dir_name)
     path_str = normalize(str(path))
     return dir_name in path_str
