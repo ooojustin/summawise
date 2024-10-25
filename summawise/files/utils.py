@@ -102,6 +102,7 @@ def matches_pattern(text: str, pattern: str) -> bool:
 
 class FilteredFiles(NamedTuple):
     files: List[Path]
+    files_conv: List[Path]
     total_count: int
     valid_count: int
 
@@ -110,6 +111,11 @@ def filter_files(all_files: List[Path]) -> FilteredFiles:
     encoding_whitelist = [Encoding.UTF_8, Encoding.ASCII]
     dir_blacklist = [".git", "node_modules", "site-packages", ".mypy_cache"]
     pattern_blacklist = [r".*\.egg-info"]
+
+    # extensions we'll still create embeddings for by creating a temp .txt duplicate
+    extensions_convert = {'.lua'}
+
+    # extensions supported by OpenAI by default
     extension_whitelist = {
         '.py', '.js', '.txt', '.md', '.html', '.css', '.java', '.c', '.cpp',
         '.rb', '.php', '.ts', '.json', '.xml', '.csv', '.xlsx', '.pptx', '.docx',
@@ -118,7 +124,7 @@ def filter_files(all_files: List[Path]) -> FilteredFiles:
 
     files = [
         file_path for file_path in all_files
-        if file_path.suffix in extension_whitelist
+        if file_path.suffix in extension_whitelist | extensions_convert
         and get_encoding(file_path) in encoding_whitelist
         and not any(has_parent_directory(file_path, dir) for dir in dir_blacklist)
     ]
@@ -131,8 +137,19 @@ def filter_files(all_files: List[Path]) -> FilteredFiles:
                 for pattern in pattern_blacklist)
     ]
 
+    # move files which need to be converted to txt into separate list
+    files_conv = [
+        file_path for file_path in files
+        if file_path.suffix in extensions_convert
+    ]
+    files = [
+        file_path for file_path in files
+        if not file_path in files_conv
+    ]
+
     return FilteredFiles(
         files=files,
+        files_conv=files_conv,
         total_count=len(all_files),
         valid_count=len(files)
     )

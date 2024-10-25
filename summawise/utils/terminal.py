@@ -1,4 +1,3 @@
-
 import pygments
 from typing import Optional
 from whats_that_code.election import guess_language_all_methods

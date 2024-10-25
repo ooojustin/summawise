@@ -1,3 +1,5 @@
+import shutil
+import tempfile
 from pathlib import Path
 from summawise import ai, utils
 from summawise.files.metadata import FileMetadata
@@ -9,16 +11,32 @@ def process_dir(dir_path: Path, delete: bool = True) -> ai.Resources:
     _ = delete
 
     resources: ai.Resources
-    files = FileUtils.list_files(dir_path)
+    all_files = FileUtils.list_files(dir_path)
     # TODO(justin): look into improving/validating approach
-    filtered = FileUtils.filter_files(files)
+    filtered = FileUtils.filter_files(all_files)
+
+    temp_files = []
+    for fp in filtered.files_conv:
+        temp_dir = tempfile.gettempdir()
+        fp_new = Path(temp_dir) / (fp.stem + ".txt")
+        shutil.copy(fp, fp_new)
+        temp_files.append(fp_new)
+
+    files = filtered.files + temp_files
     try:
         print(
-            f"Directory scan located and validated {filtered.valid_count}/{filtered.total_count} files.")
-        resources = ai.create_vector_store(dir_path.name, filtered.files)
+            f"Directory scan located and validated {len(files)}/{filtered.total_count} files.")
+        resources = ai.create_vector_store(dir_path.name, files)
         print(f"Vector store created with ID: {resources.vector_store_id}")
     except Exception as ex:
         raise Exception(f"Error creating vector store [{type(ex)}]: {ex}")
+
+    for file in temp_files:
+        if file.exists():
+            try:
+                file.unlink()
+            except:
+                pass
 
     return resources
 

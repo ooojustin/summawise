@@ -8,8 +8,8 @@ from typing import Any, Optional, Callable, Union, Tuple, Set, Dict
 from pathlib import Path
 from packaging.version import Version
 from packaging.version import Version
-from ..errors import ValueTypeError
-from ..data import HashAlg
+from summawise.errors import ValueTypeError
+from summawise.data import HashAlg
 
 
 def package_name(): return __name__.split('.')[0]
