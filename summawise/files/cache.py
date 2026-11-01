@@ -38,12 +38,14 @@ class FileCacheObj(Serializable):
         settings = cache.settings
 
         # if the file doesn't exist, save empty version by default
-        if not cache.path.exists():
+        # NOTE: save() may have written a .gz variant; utils.fp resolves whichever exists
+        path = utils.fp(cache.path)
+        if not path.exists():
             cache.save()
             return cache
 
         # if the file does exist, use functionality fom Serializable base class to establish populated object
-        return cache.from_file(cache.path, settings.data_mode)
+        return cache.from_file(path, settings.data_mode)
 
     def save(self):
         data_mode = self.settings.data_mode
