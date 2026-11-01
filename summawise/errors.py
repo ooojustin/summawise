@@ -46,3 +46,10 @@ class MissingSortKeyError(Exception):
         msg = "Missing required sort key" + \
             (": " if len(append) else ".") + append
         super().__init__(msg)
+
+
+class UnsafeCacheDirError(Exception):
+    def __init__(self, path, reason: str):
+        super().__init__(
+            f"Refusing to use summawise data directory '{path}': {reason}. "
+            "Remove or fix it and retry.")

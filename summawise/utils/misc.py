@@ -1,4 +1,5 @@
-import tempfile
+import os
+import stat
 import traceback
 import sys
 from datetime import datetime
@@ -8,7 +9,7 @@ from typing import Any, Optional, Callable, Union, Tuple, Set, Dict
 from pathlib import Path
 from packaging.version import Version
 from packaging.version import Version
-from summawise.errors import ValueTypeError
+from summawise.errors import ValueTypeError, UnsafeCacheDirError
 from summawise.data import HashAlg
 
 
@@ -27,8 +28,34 @@ class Singleton(type):
 
 
 def get_summawise_dir() -> Path:
-    temp_dir = Path(tempfile.gettempdir())
-    return temp_dir / "summawise"
+    """
+    Per-user data directory, forced to mode 0700 and verified to be a real directory owned by the current user.
+    Not under the shared temp dir: other local users could plant files there, and settings.json holds the API key.
+    Raises UnsafeCacheDirError if the path is a symlink, not a directory, or owned by another uid.
+    """
+    base = os.environ.get("XDG_CACHE_HOME", "")
+    if not os.path.isabs(base):  # relative or empty values are ignored (XDG Base Directory spec)
+        base = Path.home() / ".cache"
+    path = Path(base) / "summawise"
+    try:
+        path.mkdir(parents=True, exist_ok=True, mode=0o700)
+    except FileExistsError as ex:
+        raise UnsafeCacheDirError(path, "exists and is not a directory") from ex
+
+    # O_NOFOLLOW + fchmod on the fd avoids a check-then-chmod race against a symlink swap
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    except OSError as ex:
+        raise UnsafeCacheDirError(path, ex.strerror or str(ex)) from ex
+    try:
+        st = os.fstat(fd)
+        if st.st_uid != os.getuid():
+            raise UnsafeCacheDirError(path, f"owned by uid {st.st_uid}")
+        if stat.S_IMODE(st.st_mode) != 0o700:
+            os.fchmod(fd, 0o700)
+    finally:
+        os.close(fd)
+    return path
 
 
 def fp(file_path: Path) -> Path:

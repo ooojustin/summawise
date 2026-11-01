@@ -1,19 +1,26 @@
+import os
 import re
-import pickle
 import gzip
 import chardet
-from typing import TypeVar, Type, List, Optional, NamedTuple
+from typing import List, Optional, NamedTuple
 from pathlib import Path
 from summawise.files.encodings import Encoding
 from summawise.data import DataUnit
-
-T = TypeVar("T")
 
 
 def write_str(file_path: Path, text: str, compress: bool = False) -> None:
     file_path.parent.mkdir(parents=True, exist_ok=True)
     data = text.encode("utf-8")
     write_bytes(file_path, data, compress)
+
+
+def write_private_str(file_path: Path, text: str) -> None:
+    """Writes text readable only by the owner. fchmod also tightens a file that already existed with a looser mode."""
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "wb") as file:
+        os.fchmod(file.fileno(), 0o600)
+        file.write(text.encode("utf-8"))
 
 
 def read_str(file_path: Path) -> str:
@@ -25,7 +32,7 @@ def read_str(file_path: Path) -> str:
 def write_bytes(file_path: Path, data: bytes, compress: bool = False) -> None:
     file_path.parent.mkdir(parents=True, exist_ok=True)
     if compress:
-        if file_path.suffix != ".bin" and ".gz" not in file_path.suffixes:
+        if ".gz" not in file_path.suffixes:
             file_path = file_path.with_suffix(file_path.suffix + ".gz")
         data = gzip.compress(data)
     with open(file_path, 'wb') as file:
@@ -35,30 +42,12 @@ def write_bytes(file_path: Path, data: bytes, compress: bool = False) -> None:
 def read_bytes(file_path: Path) -> bytes:
     with open(file_path, 'rb') as file:
         data = file.read()
-    if ".gz" in file_path.suffixes or ".bin" in file_path.suffixes:
+    if ".gz" in file_path.suffixes:
         try:
             data = gzip.decompress(data)
         except gzip.BadGzipFile:
             pass
     return data
-
-
-def save_object(file_path: Path, obj: object, compress: bool = True) -> None:
-    data = pickle.dumps(obj)
-    write_bytes(file_path, data, compress)
-
-
-def load_object(file_path: Path, cls: Type[T]) -> T:
-    obj = load_object_any(file_path)
-    if not isinstance(obj, cls):
-        raise TypeError(
-            f"Expected object of type {cls.__name__}, but got {type(obj).__name__}")
-    return obj
-
-
-def load_object_any(file_path: Path) -> object:
-    data = read_bytes(file_path)
-    return pickle.loads(data)
 
 
 def list_files(directory: Path, recursive: bool = True) -> List[Path]:

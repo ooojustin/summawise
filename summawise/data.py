@@ -8,21 +8,6 @@ from pathlib import Path
 from summawise.errors import ValueTypeError
 
 
-class DataMode(Enum):
-    JSON = "json"
-    BIN = "binary"
-
-    def ext(self) -> str:
-        extensions = {
-            DataMode.JSON: "json",
-            DataMode.BIN: "bin"
-        }
-        try:
-            return extensions[self]
-        except KeyError:
-            raise ValueError(f"Unsupported DataMode: {self}")
-
-
 class DataUnit:
     """
     Utility class for converting sizes in bytes to human-readable string representations with appropriate units.
