@@ -11,7 +11,6 @@ from prompt_toolkit.completion import WordCompleter
 from pygments.styles import get_all_styles
 from summawise import utils, ai
 from summawise.utils import Singleton, ChoiceValidator
-from summawise.data import DataMode
 from summawise.files import utils as FileUtils
 from summawise.api_objects import *
 
@@ -23,7 +22,6 @@ class Settings(metaclass=Singleton):
     assistant_id: str = field(repr=False)
     model: str
     compression: bool
-    data_mode: DataMode
     code_style: str
     assistants: AssistantList
     threads: ThreadList
@@ -32,7 +30,6 @@ class Settings(metaclass=Singleton):
     DEFAULT_MODEL: ClassVar[str] = DEFAULT_MODEL
     DEFAULT_COMPRESSION: ClassVar[bool] = True
     DEFAULT_CODE_STYLE: ClassVar[str] = "monokai"
-    DEFAULT_DATA_MODE: ClassVar[DataMode] = DataMode.BIN
 
     # NOTE(justin): This class functions as a singleton. Example usage anywhere:
     # settings = Settings() # type: ignore (dismiss warnings related to required arguments)
@@ -62,6 +59,9 @@ class Settings(metaclass=Singleton):
         threads = data.pop("threads", [])
         threads = ThreadList.from_dict_list(threads)
 
+        # NOTE: 'data_mode' (pickle-backed "binary" by default) was removed; drop it from older files.
+        data.pop("data_mode", None)
+
         settings = Settings(
             assistant_id=assistant_id,
             assistants=assistants,
@@ -69,8 +69,6 @@ class Settings(metaclass=Singleton):
             model=data.pop("model", Settings.DEFAULT_MODEL),
             compression=data.pop("compression", Settings.DEFAULT_COMPRESSION),
             code_style=data.pop("code_style", Settings.DEFAULT_CODE_STYLE),
-            data_mode=DataMode(
-                data.pop("data_mode", Settings.DEFAULT_DATA_MODE.value)),
             **data
         )
 
@@ -92,7 +90,6 @@ class Settings(metaclass=Singleton):
         data = utils.asdict_exclude(self, Settings.DEPRECATED_FIELDS)
         data["assistants"] = self.assistants.to_dict_list()
         data["threads"] = self.threads.to_dict_list()
-        data["data_mode"] = self.data_mode.value
         return data
 
     @staticmethod
@@ -140,7 +137,7 @@ class Settings(metaclass=Singleton):
     def save() -> "Settings":
         settings = Settings()  # type: ignore
         s_str = json.dumps(settings.to_dict(), indent=4)
-        FileUtils.write_str(Settings.file(), s_str)
+        FileUtils.write_private_str(Settings.file(), s_str)
         return settings
 
     @staticmethod
@@ -181,9 +178,6 @@ class Settings(metaclass=Singleton):
             assistant.apply_api_obj(api_assistant)
             assistants.append(assistant)
 
-        # TODO(justin): maybe add ability to select data mode. possibly a cli option to re-configure settings too.
-        # it's not too important, for now it'll default to binary and can be changed manually.
-
         return Settings(
             api_key=api_key,
             model=model,
@@ -192,7 +186,6 @@ class Settings(metaclass=Singleton):
             threads=ThreadList(),
             compression=Settings.DEFAULT_COMPRESSION,
             code_style=style,
-            data_mode=Settings.DEFAULT_DATA_MODE,
         )
 
 
