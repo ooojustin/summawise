@@ -49,12 +49,9 @@ def process_file(file_path: Path, delete: bool = False) -> ai.Resources:
     # use settings class (singleton)
     settings = Settings()  # type: ignore
 
-    # file extension to cache file metadata (json or bin)
-    ext = settings.data_mode.ext()
-
     metadata = FileMetadata.create_from_path(file_path)
     hash = metadata.hash
-    hash_path = utils.fp(utils.get_summawise_dir() / "files" / f"{hash}.{ext}")
+    hash_path = utils.fp(utils.get_summawise_dir() / "files" / f"{hash}.json")
 
     if not hash_path.exists():
         try:
@@ -63,7 +60,6 @@ def process_file(file_path: Path, delete: bool = False) -> ai.Resources:
             metadata.file_id = next(iter(resources.file_ids))
             metadata.save_to_file(
                 file_path=hash_path,
-                mode=settings.data_mode,
                 compress=settings.compression,
                 pretty_json=True
             )
@@ -71,7 +67,7 @@ def process_file(file_path: Path, delete: bool = False) -> ai.Resources:
         except Exception as ex:
             raise Exception(f"Error creating vector store [{type(ex)}]: {ex}")
     else:
-        metadata = FileMetadata.from_file(hash_path, settings.data_mode)
+        metadata = FileMetadata.from_file(hash_path)
         print(
             f"Restored vector store ID from cache: {metadata.vector_store_id}")
 

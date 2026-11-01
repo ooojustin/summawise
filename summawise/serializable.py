@@ -2,7 +2,6 @@ import json
 from typing import TypeVar, Type
 from pathlib import Path
 from dataclasses import is_dataclass, asdict
-from summawise.data import DataMode
 from summawise.files import utils as FileUtils
 
 ST = TypeVar("ST", bound="Serializable")
@@ -13,27 +12,19 @@ class Serializable:
     def save_to_file(
         self,
         file_path: Path,
-        mode: DataMode = DataMode.JSON,
         compress: bool = False,
         pretty_json: bool = False
     ):
-        if mode == DataMode.JSON:
-            json_str = self.to_json(pretty_json)
-            FileUtils.write_str(file_path, json_str, compress)
-        elif mode == DataMode.BIN:
-            FileUtils.save_object(file_path, self, compress)
+        json_str = self.to_json(pretty_json)
+        FileUtils.write_str(file_path, json_str, compress)
 
     @classmethod
     def from_file(
         cls: Type[ST],
-        file_path: Path,
-        mode: DataMode = DataMode.JSON
+        file_path: Path
     ) -> ST:
-        if mode == DataMode.JSON:
-            json_str = FileUtils.read_str(file_path)
-            return cls.from_json(json_str)
-        elif mode == DataMode.BIN:
-            return FileUtils.load_object(file_path, cls)
+        json_str = FileUtils.read_str(file_path)
+        return cls.from_json(json_str)
 
     @classmethod
     def from_json(cls: Type[ST], json_str: str) -> ST:

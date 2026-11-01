@@ -9,11 +9,7 @@ FileCache: "FileCacheObj"
 
 def init():
     global FileCache
-    try:
-        FileCache = FileCacheObj.load()
-    except ModuleNotFoundError:
-        FileCacheObj.delete()
-        FileCache = FileCacheObj.load()
+    FileCache = FileCacheObj.load()
     ai.set_file_cache(FileCache)
 
 
@@ -35,7 +31,6 @@ class FileCacheObj(Serializable):
     def load(cls) -> "FileCacheObj":
         # create empty FileCache
         cache = cls()
-        settings = cache.settings
 
         # if the file doesn't exist, save empty version by default
         # NOTE: save() may have written a .gz variant; utils.fp resolves whichever exists
@@ -45,12 +40,11 @@ class FileCacheObj(Serializable):
             return cache
 
         # if the file does exist, use functionality fom Serializable base class to establish populated object
-        return cache.from_file(path, settings.data_mode)
+        return cache.from_file(path)
 
     def save(self):
-        data_mode = self.settings.data_mode
         compress = self.settings.compression
-        self.save_to_file(self.path, data_mode, compress, pretty_json=True)
+        self.save_to_file(self.path, compress=compress, pretty_json=True)
 
     @classmethod
     def from_json(cls, json_str: str) -> "FileCacheObj":
@@ -72,10 +66,4 @@ class FileCacheObj(Serializable):
 
     @staticmethod
     def get_path():
-        settings = Settings()  # type: ignore
-        return utils.get_summawise_dir() / f"file_cache.{settings.data_mode.ext()}"
-
-    @staticmethod
-    def delete():
-        path = FileCacheObj.get_path()
-        path.unlink(missing_ok=True)
+        return utils.get_summawise_dir() / "file_cache.json"

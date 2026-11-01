@@ -5,7 +5,6 @@ from typing import List, Dict
 from pathlib import Path
 from youtube_transcript_api import YouTubeTranscriptApi
 from summawise import utils, ai
-from summawise.data import DataMode
 from summawise.files import utils as FileUtils
 from summawise.serializable import Serializable
 from summawise.settings import Settings
@@ -85,9 +84,9 @@ def get_transcript(video_id: str, vectorize: bool = False) -> Transcript:
     return Transcript(video_id, entries, vectorize=vectorize)
 
 
-def load_transcript(file_path: Path, mode: DataMode = DataMode.JSON) -> Transcript:
+def load_transcript(file_path: Path) -> Transcript:
     # shortcut to reduce verbosity
-    return Transcript.from_file(file_path, mode)
+    return Transcript.from_file(file_path)
 
 
 def parse_video_id(url: str) -> str:
@@ -112,13 +111,10 @@ def process_url(url: str) -> ai.Resources:
     # use settings class (singleton)
     settings = Settings()  # type: ignore
 
-    # file extension to cache certain objects/data (json or bin)
-    ext = settings.data_mode.ext()
-
     video_id = parse_video_id(url)
     name = f"transcript_{video_id}"
     transcript_path = utils.fp(
-        utils.get_summawise_dir() / "youtube" / f"{name}.{ext}")
+        utils.get_summawise_dir() / "youtube" / f"{name}.json")
 
     if not transcript_path.exists():
         # fetch transcript data from youtube
@@ -134,7 +130,6 @@ def process_url(url: str) -> ai.Resources:
             resources = transcript.vectorize()
             transcript.save_to_file(
                 file_path=transcript_path,
-                mode=settings.data_mode,
                 compress=settings.compression
             )
             print(f"Vector store created with ID: {resources.vector_store_id}")
@@ -142,7 +137,7 @@ def process_url(url: str) -> ai.Resources:
             raise Exception(f"Error creating vector store [{type(ex)}]: {ex}")
     else:
         # restore transcript object from file and use cached vector store id
-        transcript = load_transcript(transcript_path, settings.data_mode)
+        transcript = load_transcript(transcript_path)
         resources = ai.Resources(
             vector_store_ids=[transcript.vector_store_id],
             file_ids=[transcript.file_id]
