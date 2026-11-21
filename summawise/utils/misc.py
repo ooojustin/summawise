@@ -33,10 +33,11 @@ def get_summawise_dir() -> Path:
     Not under the shared temp dir: other local users could plant files there, and settings.json holds the API key.
     Raises UnsafeCacheDirError if the path is a symlink, not a directory, or owned by another uid.
     """
-    base = os.environ.get("XDG_CACHE_HOME", "")
-    if not os.path.isabs(base):  # relative or empty values are ignored (XDG Base Directory spec)
-        base = Path.home() / ".cache"
-    path = Path(base) / "summawise"
+    xdg_cache_home = os.environ.get("XDG_CACHE_HOME", "")
+    # relative or empty values are ignored (XDG Base Directory spec)
+    cache_home = Path(xdg_cache_home) if os.path.isabs(
+        xdg_cache_home) else Path.home() / ".cache"
+    path = cache_home / "summawise"
     try:
         path.mkdir(parents=True, exist_ok=True, mode=0o700)
     except FileExistsError as ex:
