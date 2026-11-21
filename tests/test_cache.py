@@ -1,7 +1,9 @@
 import gzip
 import os
+import resource
 import pickle
 import shutil
+import signal
 import stat
 import tempfile
 import unittest
@@ -13,6 +15,7 @@ from summawise import utils
 from summawise.api_objects import AssistantList, ThreadList
 from summawise.errors import UnsafeCacheDirError
 from summawise.files.cache import FileCacheObj
+from summawise.files import utils as FileUtils
 from summawise.files.metadata import FileMetadata
 from summawise.settings import Settings
 from summawise.utils import Singleton
@@ -207,6 +210,68 @@ class SettingsFileTests(CacheTestCase):
         self.assertNotIn("data_mode", settings.to_dict())
         self.assertTrue(save)
 
+
+class FailedWriteTests(CacheTestCase):
+
+    @unittest.skipUnless(hasattr(resource, "RLIMIT_FSIZE"), "needs RLIMIT_FSIZE to fail a write partway")
+    def test_write_failing_partway_keeps_previous_content_and_leaves_no_temp_file(self):
+        target = utils.get_summawise_dir() / "data.json"
+        FileUtils.write_bytes(target, b"previous")
+        soft, hard = resource.getrlimit(resource.RLIMIT_FSIZE)
+        old_handler = signal.signal(signal.SIGXFSZ, signal.SIG_IGN)
+        self.addCleanup(signal.signal, signal.SIGXFSZ, old_handler)
+        self.addCleanup(resource.setrlimit, resource.RLIMIT_FSIZE, (soft, hard))
+
+        resource.setrlimit(resource.RLIMIT_FSIZE, (4096, hard))
+        with self.assertRaises(OSError):
+            FileUtils.write_bytes(target, b"x" * 1_000_000)
+        resource.setrlimit(resource.RLIMIT_FSIZE, (soft, hard))
+
+        self.assertEqual(target.read_bytes(), b"previous")
+        self.assertEqual([p.name for p in target.parent.iterdir()], ["data.json"])
+
+    def test_symlink_at_target_is_replaced_not_followed(self):
+        victim = self.xdg_cache.parent / "victim.txt"
+        victim.write_text("untouched")
+        target = utils.get_summawise_dir() / "data.json"
+        target.symlink_to(victim)
+
+        FileUtils.write_bytes(target, b"new")
+
+        self.assertEqual(victim.read_text(), "untouched")
+        self.assertFalse(target.is_symlink())
+        self.assertEqual(target.read_bytes(), b"new")
+
+class PrivateFileModeTests(CacheTestCase):
+
+    def test_every_persisted_file_is_0600_regardless_of_umask(self):
+        old_umask = os.umask(0)
+        self.addCleanup(os.umask, old_umask)
+        metadata = FileMetadata(
+            hash="abc", name="a.txt", full_path="/x/a.txt", sz_bytes=3,
+            created_at=1.0, last_modified_at=2.0, last_accessed_at=3.0,
+            vector_store_id="vs_1", file_id="file_1",
+        )
+        transcript = Transcript("vid", [TranscriptEntry("hello", 1.5, 2.0)], vector_store_id="vs_2", file_id="file_2")
+        cache_dir = utils.get_summawise_dir()
+
+        for compress in (True, False):
+            with self.subTest(compress=compress):
+                for stale in cache_dir.rglob("*"):
+                    if stale.is_file():
+                        stale.unlink()
+                Settings().compression = compress
+                FileCacheObj({"hash": "file-1"}).save()
+                metadata.save_to_file(cache_dir / "files" / "abc.json", compress=compress)
+                transcript.save_to_file(cache_dir / "youtube" / "transcript_vid.json", compress=compress)
+                Settings.save()
+
+                files = [p for p in cache_dir.rglob("*") if p.is_file()]
+                self.assertEqual(len(files), 4)
+                for path in files:
+                    self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600, path)
+                for subdir in ("files", "youtube"):
+                    self.assertEqual(stat.S_IMODE((cache_dir / subdir).stat().st_mode), 0o700, subdir)
 
 if __name__ == "__main__":
     unittest.main()

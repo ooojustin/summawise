@@ -1,6 +1,7 @@
 import os
 import re
 import gzip
+import tempfile
 import chardet
 from typing import List, Optional, NamedTuple
 from pathlib import Path
@@ -9,18 +10,7 @@ from summawise.data import DataUnit
 
 
 def write_str(file_path: Path, text: str, compress: bool = False) -> None:
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    data = text.encode("utf-8")
-    write_bytes(file_path, data, compress)
-
-
-def write_private_str(file_path: Path, text: str) -> None:
-    """Writes text readable only by the owner. fchmod also tightens a file that already existed with a looser mode."""
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, "wb") as file:
-        os.fchmod(file.fileno(), 0o600)
-        file.write(text.encode("utf-8"))
+    write_bytes(file_path, text.encode("utf-8"), compress)
 
 
 def read_str(file_path: Path) -> str:
@@ -30,13 +20,27 @@ def read_str(file_path: Path) -> str:
 
 
 def write_bytes(file_path: Path, data: bytes, compress: bool = False) -> None:
-    file_path.parent.mkdir(parents=True, exist_ok=True)
+    """
+    Atomically writes owner-only (0600) data: a temp file in the destination directory is fsynced and renamed over
+    the target, so readers see the old or the new content, never a truncated file. Replacing the inode also tightens
+    a pre-existing looser file, and a symlink at the target is replaced rather than followed.
+    """
+    file_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     if compress:
         if ".gz" not in file_path.suffixes:
             file_path = file_path.with_suffix(file_path.suffix + ".gz")
         data = gzip.compress(data)
-    with open(file_path, 'wb') as file:
-        file.write(data)
+    fd, tmp_name = tempfile.mkstemp(
+        dir=file_path.parent, prefix=f".{file_path.name}.", suffix=".tmp")  # mkstemp creates the file 0600
+    try:
+        with os.fdopen(fd, "wb") as file:
+            file.write(data)
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(tmp_name, file_path)
+    except BaseException:
+        os.unlink(tmp_name)
+        raise
 
 
 def read_bytes(file_path: Path) -> bytes:
