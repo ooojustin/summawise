@@ -137,7 +137,7 @@ class Settings(metaclass=Singleton):
     def save() -> "Settings":
         settings = Settings()  # type: ignore
         s_str = json.dumps(settings.to_dict(), indent=4)
-        FileUtils.write_private_str(Settings.file(), s_str)
+        FileUtils.write_str(Settings.file(), s_str)
         return settings
 
     @staticmethod
