@@ -1,6 +1,8 @@
 import json
 import os
 import copy
+import stat
+import tempfile
 import warnings
 from dataclasses import dataclass, fields, field
 from typing import Set, Optional, Dict, List, Any, ClassVar, Tuple
@@ -93,7 +95,24 @@ class Settings(metaclass=Singleton):
         return data
 
     @staticmethod
+    def remove_legacy_file() -> None:
+        """
+        Deletes the pre-0.5.5 settings file from the shared temp dir. It holds the API key and is never read again.
+        Only a regular file owned by the current user is removed; anything else at that path is not ours to delete.
+        """
+        legacy = Path(tempfile.gettempdir()) / "summawise" / "settings.json"
+        try:
+            st = legacy.lstat()
+            if stat.S_ISREG(st.st_mode) and st.st_uid == os.getuid():
+                legacy.unlink()
+        except FileNotFoundError:
+            pass
+        except OSError as ex:
+            print(f"Could not delete legacy settings file '{legacy}', remove it manually: {ex}")
+
+    @staticmethod
     def init() -> "Settings":
+        Settings.remove_legacy_file()
         file = Settings.file()
         if file.exists():
             s_str = FileUtils.read_str(file)

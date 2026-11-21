@@ -330,5 +330,50 @@ class PrivateFileModeTests(CacheTestCase):
                 for subdir in ("files", "youtube"):
                     self.assertEqual(stat.S_IMODE((cache_dir / subdir).stat().st_mode), 0o700, subdir)
 
+
+class LegacySettingsRemovalTests(CacheTestCase):
+
+    def legacy_path(self) -> Path:
+        return self.shared_tmp / "summawise" / "settings.json"
+
+    def plant(self) -> Path:
+        path = self.legacy_path()
+        path.parent.mkdir()
+        path.write_text('{"api_key": "sk-old"}')
+        return path
+
+    def test_init_deletes_legacy_settings_file_owned_by_user(self):
+        path = self.plant()
+
+        with mock.patch.object(Settings, "prompt", side_effect=RuntimeError("stop after cleanup")), \
+                self.assertRaises(RuntimeError):
+            Settings.init()
+
+        self.assertFalse(path.exists())
+
+    def test_missing_legacy_file_is_not_an_error(self):
+        Settings.remove_legacy_file()
+
+    def test_legacy_symlink_is_left_alone(self):
+        target = self.xdg_cache.parent / "elsewhere.json"
+        target.write_text("keep")
+        path = self.legacy_path()
+        path.parent.mkdir()
+        path.symlink_to(target)
+
+        Settings.remove_legacy_file()
+
+        self.assertTrue(path.is_symlink())
+        self.assertEqual(target.read_text(), "keep")
+
+    def test_legacy_file_owned_by_another_user_is_left_alone(self):
+        path = self.plant()
+
+        with mock.patch.object(os, "getuid", return_value=os.getuid() + 1):
+            Settings.remove_legacy_file()
+
+        self.assertTrue(path.exists())
+
+
 if __name__ == "__main__":
     unittest.main()

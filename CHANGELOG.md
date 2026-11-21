@@ -4,6 +4,14 @@ All notable changes to summawise will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Data now lives in `$XDG_CACHE_HOME/summawise` (default `~/.cache/summawise`, mode 0700) instead of `/tmp/summawise`. Settings are not migrated, so you will be prompted for your API key and preferences again.
+- The old `/tmp/summawise/settings.json` holds your API key. It is deleted automatically on first run if it is a regular file you own; otherwise delete it yourself.
+- The file cache is JSON instead of pickle; existing pickle caches are ignored (never loaded).
+- Cache, metadata, transcript and settings files are written atomically with mode 0600.
+- A malformed file cache is renamed to `file_cache.json[.gz].corrupt` and replaced by an empty one instead of crashing startup.
+
 ## [0.5.0] - July 24th, 2024
 
 ### Added

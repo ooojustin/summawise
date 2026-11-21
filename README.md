@@ -27,6 +27,10 @@ This tool uses OpenAI API features which are currently in beta.
 - [File Search (assistant tool)](https://platform.openai.com/docs/assistants/tools/file-search)
 - [Code Interpreter (assistant tool)](https://platform.openai.com/docs/assistants/tools/code-interpreter)
 
+## Data location
+
+Settings and caches are stored in `$XDG_CACHE_HOME/summawise` (default `~/.cache/summawise`), readable only by you. Earlier versions used `/tmp/summawise`; you will be prompted for settings again, and `/tmp/summawise/settings.json` (which holds your API key) is deleted on first run if you own it.
+
 ## Information
 
 The following inputs are supported:
