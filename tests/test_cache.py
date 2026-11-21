@@ -13,7 +13,7 @@ from unittest import mock
 from summawise import ai  # noqa: F401  (must load before settings: settings <-> ai import cycle)
 from summawise import utils
 from summawise.api_objects import AssistantList, ThreadList
-from summawise.errors import UnsafeCacheDirError
+from summawise.errors import MalformedCacheError, UnsafeCacheDirError
 from summawise.files.cache import FileCacheObj
 from summawise.files import utils as FileUtils
 from summawise.files.metadata import FileMetadata
@@ -158,7 +158,6 @@ class CacheDirTests(CacheTestCase):
 class RoundTripTests(CacheTestCase):
 
     def test_file_cache_round_trip(self):
-        # explicit dict: FileCacheObj() shares a mutable default
         FileCacheObj({"round-trip-hash": "file-123"}).save()
 
         loaded = FileCacheObj.load()
@@ -241,6 +240,64 @@ class FailedWriteTests(CacheTestCase):
         self.assertEqual(victim.read_text(), "untouched")
         self.assertFalse(target.is_symlink())
         self.assertEqual(target.read_bytes(), b"new")
+
+
+class MalformedFileCacheTests(CacheTestCase):
+
+    def malformed_variants(self):
+        valid = b'{"hash": "file-1"}'
+        return {
+            "truncated json": ("file_cache.json", valid[:-4]),
+            "non-utf8": ("file_cache.json", b'{"hash": "\xff\xfe"}'),
+            "json array": ("file_cache.json", b"[1, 2]"),
+            "json null": ("file_cache.json", b"null"),
+            "empty file": ("file_cache.json", b""),
+            "deeply nested": ("file_cache.json", b"[" * 100_000),
+            "truncated gzip": ("file_cache.json.gz", gzip.compress(valid)[:-10]),
+            "corrupt gzip stream": ("file_cache.json.gz", gzip.compress(valid)[:12] + b"\xff" * 8),
+            "gzip of non-utf8": ("file_cache.json.gz", gzip.compress(b'{"a": "\xff"}')),
+        }
+
+    def test_from_file_raises_malformed_cache_error(self):
+        for name, (filename, content) in self.malformed_variants().items():
+            with self.subTest(name):
+                path = utils.get_summawise_dir() / filename
+                path.write_bytes(content)
+
+                with self.assertRaises(MalformedCacheError):
+                    FileCacheObj.from_file(path)
+
+    def test_load_starts_empty_sets_file_aside_and_next_save_is_read_back(self):
+        for name, (filename, content) in self.malformed_variants().items():
+            with self.subTest(name):
+                cache_dir = utils.get_summawise_dir()
+                for stale in cache_dir.iterdir():
+                    stale.unlink()
+                path = cache_dir / filename
+                path.write_bytes(content)
+
+                with mock.patch("builtins.print"):
+                    cache = FileCacheObj.load()
+
+                self.assertIsNone(cache.get_file_id_by_hash("hash"))
+                self.assertEqual(path.with_name(filename + ".corrupt").read_bytes(), content)
+                cache.set_hash_file_id("hash", "file-2")
+                cache.save()
+                self.assertEqual(FileCacheObj.load().get_file_id_by_hash("hash"), "file-2")
+
+    def test_non_string_values_are_dropped_and_valid_entries_kept(self):
+        (utils.get_summawise_dir() / "file_cache.json").write_text('{"a": "file-1", "b": 2, "c": null}')
+
+        cache = FileCacheObj.load()
+
+        self.assertEqual(cache.get_file_id_by_hash("a"), "file-1")
+        self.assertIsNone(cache.get_file_id_by_hash("b"))
+
+    def test_instances_do_not_share_entries(self):
+        FileCacheObj().set_hash_file_id("hash", "file-1")
+
+        self.assertIsNone(FileCacheObj().get_file_id_by_hash("hash"))
+
 
 class PrivateFileModeTests(CacheTestCase):
 

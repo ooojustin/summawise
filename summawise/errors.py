@@ -53,3 +53,8 @@ class UnsafeCacheDirError(Exception):
         super().__init__(
             f"Refusing to use summawise data directory '{path}': {reason}. "
             "Remove or fix it and retry.")
+
+
+class MalformedCacheError(Exception):
+    def __init__(self, path, reason: str):
+        super().__init__(f"Malformed cache file '{path}': {reason}")
