@@ -366,6 +366,44 @@ class LegacySettingsRemovalTests(CacheTestCase):
         self.assertTrue(path.is_symlink())
         self.assertEqual(target.read_text(), "keep")
 
+    def test_symlinked_legacy_dir_is_not_followed(self):
+        victim_dir = self.xdg_cache.parent / "victim"
+        victim_dir.mkdir()
+        victim = victim_dir / "settings.json"
+        victim.write_text("keep")
+        self.legacy_path().parent.symlink_to(victim_dir, target_is_directory=True)
+
+        with mock.patch("builtins.print"):
+            Settings.remove_legacy_file()
+
+        self.assertEqual(victim.read_text(), "keep")
+
+    def test_legacy_dir_symlinked_to_cache_dir_keeps_current_settings(self):
+        Settings.save()
+        self.legacy_path().parent.symlink_to(utils.get_summawise_dir(), target_is_directory=True)
+
+        with mock.patch("builtins.print"):
+            Settings.remove_legacy_file()
+
+        self.assertTrue(Settings.file().exists())
+
+    def test_legacy_dir_owned_by_another_user_is_left_alone(self):
+        path = self.plant()
+
+        with mock.patch.object(os, "getuid", return_value=os.getuid() + 1):
+            Settings.remove_legacy_file()
+
+        self.assertTrue(path.exists())
+
+    def test_tmpdir_equal_to_cache_dir_keeps_current_settings(self):
+        Settings.save()
+        cache_root = self.xdg_cache
+
+        with mock.patch.object(tempfile, "tempdir", str(cache_root)):
+            Settings.remove_legacy_file()
+
+        self.assertTrue(Settings.file().exists())
+
     def test_legacy_file_owned_by_another_user_is_left_alone(self):
         path = self.plant()
 
