@@ -98,17 +98,36 @@ class Settings(metaclass=Singleton):
     def remove_legacy_file() -> None:
         """
         Deletes the pre-0.5.5 settings file from the shared temp dir. It holds the API key and is never read again.
-        Only a regular file owned by the current user is removed; anything else at that path is not ours to delete.
+        The directory is opened without following symlinks and the file is stat'd and unlinked relative to that fd,
+        so a planted symlink can't redirect the delete. Only a regular file owned by the current user is removed, and
+        never the current settings file (TMPDIR may equal the cache dir).
         """
-        legacy = Path(tempfile.gettempdir()) / "summawise" / "settings.json"
+        legacy_dir = Path(tempfile.gettempdir()) / "summawise"
         try:
-            st = legacy.lstat()
-            if stat.S_ISREG(st.st_mode) and st.st_uid == os.getuid():
-                legacy.unlink()
+            dir_fd = os.open(legacy_dir, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        except FileNotFoundError:
+            return
+        except OSError as ex:  # ELOOP/ENOTDIR: a symlink or non-directory is not ours to touch
+            print(f"Skipping legacy settings cleanup in '{legacy_dir}': {ex.strerror}")
+            return
+        try:
+            if os.fstat(dir_fd).st_uid != os.getuid():
+                return
+            st = os.stat("settings.json", dir_fd=dir_fd, follow_symlinks=False)
+            if not stat.S_ISREG(st.st_mode) or st.st_uid != os.getuid():
+                return
+            try:
+                if os.path.samestat(st, Settings.file().stat()):
+                    return
+            except FileNotFoundError:
+                pass
+            os.unlink("settings.json", dir_fd=dir_fd)
         except FileNotFoundError:
             pass
         except OSError as ex:
-            print(f"Could not delete legacy settings file '{legacy}', remove it manually: {ex}")
+            print(f"Could not delete legacy settings file in '{legacy_dir}', remove it manually: {ex}")
+        finally:
+            os.close(dir_fd)
 
     @staticmethod
     def init() -> "Settings":
